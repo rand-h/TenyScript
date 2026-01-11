@@ -3,7 +3,7 @@
 > **Le langage de script hybride pour l'automatisation liturgique et les applications web dynamiques.**
 
 <p align="center">
-  <img src="icons/logo-with-text.svg" alt="TenyScript Logo" width="300">
+  <img src="https://tenyscript.web.app/icons/logo-with-text.svg" alt="TenyScript Logo" width="300">
 </p>
 
 <p align="center">
@@ -48,12 +48,19 @@ Le projet inclut **TenyStudio**, un IDE complet fonctionnant entièrement dans l
 
 ## Installation & Démarrage
 
-Ce projet est une application web statique. Aucune installation complexe (Node.js, Python, etc.) n'est requise pour l'exécuter.
+Essayer : [https://tenyscript.web.app](https://tenyscript.web.app/TenyStudio.html)
 
-### Option 1 : Serveur Local (Recommandé)
-Pour que le chargement des fichiers d'exemple (`./export`) fonctionne correctement (restrictions CORS), utilisez un serveur local.
+---
 
-Si vous avez Python :
-```bash
-python3 -m http.server 8000
-# Ouvrez http://localhost:8000
+## Syntaxe Rapide
+
+TenyScript utilise `$>pour_les_commandes`. Tout le reste est traité comme du texte/HTML.
+
+### Variables & Affichage
+```javascript
+// Déclaration
+$>var nom = "TenyScript"
+$>var version = 2.0
+
+// Affichage
+Bienvenue sur $>print($nom, "gold") v.$version !
