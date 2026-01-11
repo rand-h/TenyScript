@@ -1,7 +1,7 @@
 // Fichier: export/readme.teny
 
 $>print("📂 PROJET DÉMO CHARGÉ", "#4caf50")
-$>print("-----------------------------------", "#666")
+$>print("-----------------------------------", "#888")
 
 Bienvenue dans l'environnement de développement **TenyStudio**.
 Ce dossier virtuel a été chargé depuis le serveur.
@@ -14,5 +14,6 @@ Instructions :
 2. Testez le bouton "Exécuter" (F5).
 3. Modifiez le code pour tester le "Live Reload".
 
-$>print("-----------------------------------", "#666")
+$>print("-----------------------------------", "#888")
+
 $>button("Lancer l'exemple", "$>import('exemple')")
