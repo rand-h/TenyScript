@@ -1,0 +1,88 @@
+// ============================================================
+// 📊 TABLEAU DE BORD DYNAMIQUE & DONNÉES JSON
+// ============================================================
+
+$>titre("🚀 INITIALISATION DU SYSTÈME")
+$>dom_inject_banner("Connexion au serveur de données...", "#ffa000")
+$>print("Connexion établie. Récupération des paquets...", "gray")
+
+// Simulation d'un délai réseau (Asynchrone)
+$>wait(1500)
+$>dom_inject_banner("Analyse des données en cours...", "#2196f3")
+
+// ------------------------------------------------------------
+// 1. MANIPULATION JSON & TABLEAUX
+// ------------------------------------------------------------
+$>titre("1. Traitement de Données JSON")
+
+// Simulation d'une réponse API (JSON brut)
+$>var json_api = '[{"id":1,"nom":"Serveur Alpha","charge":45,"status":"ok"},{"id":2,"nom":"Serveur Beta","charge":82,"status":"warning"},{"id":3,"nom":"Serveur Gamma","charge":12,"status":"ok"},{"id":4,"nom":"Serveur Delta","charge":67,"status":"ok"}]'
+
+// Parsing du JSON en objet utilisable
+$>var data = $>json_parse($json_api)
+$>print("Paquet reçu : " + $>len($data) + " nœuds détectés.", "#9cdcfe")
+
+// Initialisation des tableaux pour le graphique
+$>var labels = []
+$>var values = []
+$>var total_load = 0
+
+// ------------------------------------------------------------
+// 2. BOUCLE FOR INTELLIGENTE
+// ------------------------------------------------------------
+$>print("Analyse détaillée des nœuds :")
+
+// Boucle sur les objets (Syntaxe : $>for(element, liste))
+$>for(node, $data) {
+    // Extraction des propriétés via $>get
+    $>var nom = $>get($node, "nom")
+    $>var cpu = $>get($node, "charge")
+    $>var status = $>get($node, "status")
+    
+    // Logique conditionnelle (Couleur selon status)
+    $>var color = "gray"
+    $>if($cpu > 80) { $>var color = "#ff5252" }
+    $>else { $>var color = "#b9f6ca" }
+    
+    $>print(" 🖥️ " + $nom + " : " + $cpu + "% (" + $status + ")", $color)
+    
+    // Accumulation pour les stats
+    $>var total_load = $>math($total_load + $cpu)
+    
+    // Remplissage des tableaux pour le graphique
+    $>push($labels, $nom)
+    $>push($values, $cpu)
+}
+
+// ------------------------------------------------------------
+// 3. STATISTIQUES & MATHS
+// ------------------------------------------------------------
+$>var avg = $>math(round($total_load / $>len($data)))
+
+$>print("-----------------------------------")
+$>print("CHARGE MOYENNE DU CLUSTER : " + $avg + "%", "orange")
+
+// ------------------------------------------------------------
+// 4. VISUALISATION GRAPHIQUE (Chart.js intégré)
+// ------------------------------------------------------------
+$>titre("2. Visualisation Temps Réel")
+$>chart_line($labels, $values, "Charge CPU (%)")
+
+// ------------------------------------------------------------
+// 5. SIMULATION TEMPS RÉEL (Boucle + Wait)
+// ------------------------------------------------------------
+$>titre("3. Monitoring Live (5s)")
+
+$>var tick = 1
+$>repeat(5) {
+    $>wait(1000) // Pause d'une seconde
+    // Génération de fausses variations
+    $>var variation = $>random(-10, 10)
+    $>var current = $>math($avg + $variation)
+    
+    $>print("⏱️ T+" + $tick + "s : Charge actuelle -> " + $current + "%")
+    $>var tick = $>math($tick + 1)
+}
+
+$>dom_inject_banner("Cycle de surveillance terminé", "#4caf50")
+$>print("✅ Opérations terminées avec succès.", "lime")

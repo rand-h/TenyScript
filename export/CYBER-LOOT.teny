@@ -1,0 +1,114 @@
+// ============================================================
+// 👾 CYBER-LOOT 2077 (Ultimate Engine Test)
+// ============================================================
+
+// 1. STYLE CYBERPUNK
+$>print("<style>
+    .cyber-card { background: #0a0a0a; border: 1px solid #333; padding: 15px; border-radius: 4px; box-shadow: 0 0 10px rgba(0,255,200,0.1); font-family: 'Courier New', monospace; }
+    .cyber-title { color: #00e676; text-shadow: 0 0 5px #00e676; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #00e676; padding-bottom: 5px; }
+    .cyber-screen { background: #000; border: 1px solid #00e676; color: #00e676; padding: 20px; font-size: 2em; text-align: center; margin: 10px 0; min-height: 80px; display:flex; align-items:center; justify-content:center; text-shadow: 0 0 5px #00e676; }
+    .item-legendary { color: #ffeb3b; text-shadow: 0 0 8px #ffeb3b; }
+    .item-rare { color: #d500f9; text-shadow: 0 0 8px #d500f9; }
+    .item-common { color: #00e676; }
+    .cyber-btn { width:100%; padding:10px; background:#00e676; color:black; font-weight:bold; border:none; cursor:pointer; font-family:monospace; font-size:1.1em; transition:0.2s; }
+    .cyber-btn:hover { background: #69f0ae; box-shadow: 0 0 15px #00e676; }
+</style>")
+
+$>titre("SYSTEME DE DÉCRYPTAGE")
+
+// 2. CHARGEMENT DONNÉES (PERSISTANCE)
+$>var credits = $>load_data("cyber_credits")
+$>if($credits == null) { $>var credits = 500 }
+
+$>var inventory = $>load_data("cyber_inv")
+$>if($inventory == null) { $>var inventory = [] }
+
+// 3. INTERFACE UTILISATEUR
+$>print("<div class='cyber-card'>")
+$>print("  <div class='cyber-title'>PORTFEUILLE: <span id='ui_credits'>" + $credits + "</span> ₵</div>")
+$>print("  <div id='loot_screen' class='cyber-screen'>PRÊT À HACKER</div>")
+$>print("  <div id='status_msg' style='color:#555; font-size:0.8em; margin-bottom:10px;'>Coût du décryptage : 100 ₵</div>")
+$>print("</div>")
+
+$>espace(10)
+
+// 4. CODE DU HACK (DANS LE BOUTON)
+// Note : Ce code est exécuté dans un contexte isolé lors du clic
+$>var hackCode = "
+    $>var cred = $>load_data('cyber_credits');
+    $>if($cred == null) { $>var cred = 500 };
+
+    $>if($cred < 100) {
+        $>dom_update('#status_msg', '<span style=color:red>CRÉDITS INSUFFISANTS ! RECHARGEZ.</span>');
+        $>dom_update('#loot_screen', 'ACCESS DENIED');
+    } $>else {
+        // 1. Paiement
+        $>var cred = $>math($cred - 100);
+        $>save_data('cyber_credits', $cred);
+        $>dom_update('#ui_credits', $cred);
+        $>dom_update('#status_msg', 'DÉCRYPTAGE EN COURS...');
+
+        // 2. Animation Matrix (Boucle de suspense)
+        $>var chars = '░▒▓█<>/#';
+        $>repeat(15) {
+            $>var r1 = $>random(100, 999);
+            $>var r2 = $>random(100, 999);
+            $>dom_update('#loot_screen', r1 + ' ' + r2 + ' ...');
+            $>wait(80); // Pause pour l'animation (C'est fluide !)
+        }
+
+        // 3. Algorithme de Rareté
+        $>var luck = $>random(1, 100);
+        $>var item = '';
+        $>var colorClass = '';
+
+        $>if($luck > 95) {
+            // 5% de chance - LÉGENDAIRE
+            $>var item = 'NEURO-IMPLANT [L]';
+            $>var colorClass = 'item-legendary';
+        } $>else {
+            $>if($luck > 70) {
+                // 25% de chance - RARE
+                $>var item = 'PUCE DE RAM [R]';
+                $>var colorClass = 'item-rare';
+            } $>else {
+                // 70% de chance - COMMUN
+                $>var item = 'CÂBLE USB [C]';
+                $>var colorClass = 'item-common';
+            }
+        }
+
+        // 4. Affichage du résultat
+        $>dom_update('#loot_screen', '<span class=' + $colorClass + '>' + $item + '</span>');
+        $>dom_update('#status_msg', 'ITEM AJOUTÉ À L\\'INVENTAIRE.');
+
+        // 5. Sauvegarde Inventaire
+        $>var inv = $>load_data('cyber_inv');
+        $>if($inv == null) { $>var inv = [] };
+        $>push($inv, $item);
+        $>save_data('cyber_inv', $inv);
+        
+        // Mise à jour liste
+        $>var listHtml = $>join($inv, '<br>• ');
+        $>dom_update('#inv_list', '• ' + $listHtml);
+    }
+"
+
+$>print($>button("LANCER LE HACK [100₵]", $hackCode, "#00e676"))
+$>espace(5)
+$>print($>button("RESET SYSTÈME", "$>save_data('cyber_credits', 1000); $>save_data('cyber_inv', []); $>dom_inject_banner('Reset effectué');", "#333"))
+
+// 5. ZONE D'INVENTAIRE
+$>espace(15)
+$>titre("INVENTAIRE RÉCUPÉRÉ")
+$>print("<div id='inv_list' style='color:#888; font-size:0.9em; border-left:2px solid #333; padding-left:10px;'>")
+$>if($>len($inventory) > 0) {
+    // 1. On prépare la liste dans une variable
+    $>var liste_html = $>join($inventory, "<br>• ")
+    
+    // 2. On affiche la variable
+    $>print("• " + $liste_html)
+} $>else {
+    $>print("<i>Aucun artefact récupéré.</i>")
+}
+$>print("</div>")

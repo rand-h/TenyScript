@@ -1,0 +1,15 @@
+// ...
+$>dom_inject_banner("Connexion aux vraies API...", "#5e35b1")
+
+// 1. D'abord on récupère la valeur via l'API
+$>var m = $>meteo()
+// 2. Ensuite on l'affiche
+$>print("Météo locale : " + $m, "gray")
+
+$>var theme = $>lohahevitra()
+$>print("Thème du mois : " + $theme, "#d81b60")
+
+// Pour les fonctions qui affichent directement du HTML, vous pouvez les appeler seules :
+$>perikopa(":lire")
+$>hira_rand("FFPM")
+// ...

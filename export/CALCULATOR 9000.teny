@@ -1,0 +1,82 @@
+// ============================================================
+// 🧮 CALCULATOR 9000
+// ============================================================
+
+$>titre("CALCULATRICE <br>") 
+
+// 1. ÉCRAN DE CALCUL
+// On utilise un input désactivé pour l'affichage, style LCD
+$>print("<input id='ecran' type='text' value='' disabled style='
+    width: 30%; 
+    height: 60px; 
+    background: #8fa584; 
+    color: #111; 
+    font-family: monospace; 
+    font-size: 2em; 
+    text-align: right; 
+    padding: 10px; 
+    border: 4px solid #333; 
+    border-radius: 5px;
+    margin-bottom: 10px;
+'>")
+
+// 2. FONCTIONS LOGIQUES
+// On définit les fonctions que les boutons vont appeler
+
+$>def clic(val) {
+    $>var actuel = $>dom_val("ecran")
+    $>dom_set_val("#ecran", $actuel + $val)
+}
+
+$>def clear() {
+    $>dom_set_val("#ecran", "")
+}
+
+$>def calculer() {
+    $>var expression = $>dom_val("ecran")
+    // Astuce : on utilise une variable intermédiaire pour le calcul
+    $>var resultat = $>math($expression)
+    $>dom_set_val("#ecran", $resultat)
+}
+
+// 3. GÉNÉRATION DU CLAVIER
+// On utilise une boucle pour générer les chiffres proprement
+
+$>var styleChiffre = "#444"
+$>var styleOp = "#ffca28; color: black"
+$>var styleEgal = "#4caf50"
+$>var styleClear = "#f44336"
+
+// Ligne 1 : 7 8 9 /
+$>print("<div>")
+$>print($>button("7", "$>clic(7)", $styleChiffre))
+$>print($>button("8", "$>clic(8)", $styleChiffre))
+$>print($>button("9", "$>clic(9)", $styleChiffre))
+$>print($>button("÷", "$>clic('/')", $styleOp))
+$>print("</div>")
+
+// Ligne 2 : 4 5 6 *
+$>print("<div>")
+$>print($>button("4", "$>clic(4)", $styleChiffre))
+$>print($>button("5", "$>clic(5)", $styleChiffre))
+$>print($>button("6", "$>clic(6)", $styleChiffre))
+$>print($>button("×", "$>clic('*')", $styleOp))
+$>print("</div>")
+
+// Ligne 3 : 1 2 3 -
+$>print("<div>")
+$>print($>button("1", "$>clic(1)", $styleChiffre))
+$>print($>button("2", "$>clic(2)", $styleChiffre))
+$>print($>button("3", "$>clic(3)", $styleChiffre))
+$>print($>button("-", "$>clic('-')", $styleOp))
+$>print("</div>")
+
+// Ligne 4 : C 0 = +
+$>print("<div>")
+$>print($>button("C", "$>clear()", $styleClear))
+$>print($>button("0", "$>clic(0)", $styleChiffre))
+$>print($>button("=", "$>calculer()", $styleEgal))
+$>print($>button("+", "$>clic('+')", $styleOp))
+$>print("</div>")
+
+$>dom_inject_banner("Calculatrice prête.", "#333")

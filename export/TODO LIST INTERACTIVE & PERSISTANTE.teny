@@ -1,0 +1,70 @@
+// ============================================================
+// ✅ TODO LIST INTERACTIVE & PERSISTANTE
+// ============================================================
+
+$>titre("MA LISTE DE TÂCHES")
+$>dom_inject_banner("Application chargée", "#2e7d32")
+
+// 1. CHARGEMENT DES DONNÉES
+// On essaie de charger la liste. Si vide, on crée un tableau vide.
+$>var saved = $>load_data("mes_taches")
+$>if($saved == null) { $>var saved = [] }
+
+// 2. FONCTION D'AFFICHAGE (Render)
+// On définit une zone HTML qui sera mise à jour
+$>print("<div id='zone_liste'></div>")
+
+// On définit une fonction pour générer le HTML de la liste
+$>def renderList(liste) {
+    $>var html = ""
+    $>var count = 0
+    
+    $>for(tache, $liste) {
+        // Bouton supprimer pour chaque tâche
+        // Notez la complexité : on génère du code TenyScript DANS le bouton
+        $>var codeSuppr = "$>var l = $>load_data('mes_taches'); $>pop($l); $>save_data('mes_taches', $l); $>refreshApp($l);"
+        
+        $>var btnDel = $>button("X", $codeSuppr, "#d32f2f")
+        $>var html = $html + "<div style='background:#252526; padding:8px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;'><span>" + $tache + "</span>" + $btnDel + "</div>"
+        $>var count = $>math($count + 1)
+    }
+    
+    $>if($count == 0) { $>var html = "<i style='color:gray'>Aucune tâche pour le moment.</i>" }
+    
+    // Mise à jour du DOM
+    $>dom_update("#zone_liste", $html)
+}
+
+// Fonction pour tout rafraîchir (appelée par les boutons)
+$>def refreshApp(data) {
+    $>renderList($data)
+}
+
+// 3. AFFICHAGE INITIAL
+$>renderList($saved)
+
+// 4. ZONE DE SAISIE
+$>espace(15)
+$>titre("NOUVELLE TÂCHE")
+
+$>input("input_tache", "Entrez une tâche ici...")
+$>espace(5)
+
+// 5. LOGIQUE D'AJOUT
+// Ce code sera exécuté quand on clique sur "Ajouter"
+$>var codeAjout = "
+    $>var nouv = $>dom_val('input_tache');
+    $>if($>len($nouv) > 0) {
+        $>var liste = $>load_data('mes_taches');
+        $>if($liste == null) { $>var liste = [] };
+        $>push($liste, $nouv);
+        $>save_data('mes_taches', $liste);
+        $>refreshApp($liste);
+        $>dom_inject_banner('Tâche ajoutée !', '#2e7d32');
+        $>dom_style('#input_tache', 'value', ''); // Reset input (via astuce ou update value manuelle en JS si besoin)
+    } $>else {
+        $>dom_inject_banner('Veuillez écrire quelque chose', '#c62828');
+    }
+"
+
+$>print($>button("AJOUTER LA TÂCHE", $codeAjout, "#007acc"))

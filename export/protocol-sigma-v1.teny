@@ -1,0 +1,98 @@
+$>titre(⚡ PROTOCOLE OMEGA : ULTIMATE STRESS TEST ⚡)
+
+$>print("Initialisation des systèmes...", "gray")
+$>call(stdLib.wait, 500)
+
+$>space(10)
+$>titre(1. TEST MATRICIEL : GÉNÉRATION DE CARTE)
+$>print("Création d'un univers 10x10...", "blue")
+
+$>comment(On utilise var _ pour cacher la sortie console de la création)
+$>var = map = $>call(stdLib.matrix_new, 10, 10, "⬛")
+
+$>print("Injection des entités (Silence radio)...")
+$>repeat(15) {
+    $>var = r = $>random(0, 9)
+    $>var = c = $>random(0, 9)
+    $>comment(Astuce : on capture le retour dans une variable _ pour ne pas l'afficher)
+    $>var = _ = $>call(stdLib.matrix_set, $map, $r, $c, "🌲")
+}
+$>repeat(5) {
+    $>var = r = $>random(0, 9)
+    $>var = c = $>random(0, 9)
+    $>var = _ = $>call(stdLib.matrix_set, $map, $r, $c, "🏰")
+}
+
+$>var = _ = $>call(stdLib.matrix_set, $map, 5, 5, "🧙‍♂️")
+
+$>print("Rendu graphique du monde :")
+$>print($>call(stdLib.matrix_view, $map))
+
+
+$>space(20)
+$>titre(2. TEST MÉMOIRE : L'OBJET INFINI)
+$>print("Création d'une structure de données fractale (50 niveaux)...")
+
+$>var = ame = { "id": 0, "data": "NOYAU" }
+
+$>repeat(50) {
+    $>set(ame = { "niveau": $index, "contenu": $ame })
+}
+
+$>print("Structure générée. Vérification du niveau 50...")
+$>if($>call(stdLib.get, $ame, "niveau") == 50) {
+    $>print("✅ Intégrité Structurelle: 100%", "green")
+} $>else {
+    $>alerte(❌ Échec critique de la mémoire)
+}
+
+
+$>space(20)
+$>titre(3. MATHS RÉCURSIVES : SÉQUENCE DE FIBONACCI)
+$>print("Calcul du Nombre Sacré (Fibonacci 10)...")
+
+$>def=fibo(n) {
+    $>if($n < 2) {
+        $>comment(🔥 IMPORTANT : On utilise la variable 'return' pour renvoyer la valeur)
+        $>var = return = $n
+    } $>else {
+        $>var = n1 = $>math($n - 1)
+        $>var = n2 = $>math($n - 2)
+        $>var = res = $>math( $>call(fibo, $n1) + $>call(fibo, $n2) )
+        $>var = return = $res
+    }
+}
+
+$>var = sacre = $>call(fibo, 10)
+$>print("🔮 Le Nombre Sacré est : " + $sacre, "purple")
+
+
+$>space(20)
+$>titre(4. TEST LITURGIQUE DYNAMIQUE)
+$>print("Recherche d'un chant correspondant au Nombre Sacré...")
+
+$>if($sacre > 0) {
+    $>var = chant = $>hihira("FFPM " + $sacre, "1")
+    $>print($chant)
+} $>else {
+    $>alerte(Erreur de calcul du nombre sacré !)
+}
+
+
+$>space(20)
+$>titre(5. FINAL : HACKING SIMULATION)
+$>print("Déchiffrement de la matrice...")
+
+$>var = code = ["A", "X", "4", "B", "9", "Z"]
+$>repeat(6) {
+    $>call(stdLib.wait, 100)
+    $>var = char = $>call(stdLib.pop, $code)
+    $>print("Décryptage bit " + $index + " : [ " + $char + " ] ... OK", "green")
+}
+
+$>space(10)
+$>titre(RÉSULTAT DU SYSTÈME)
+$>meteo
+$>today
+$>amen
+$>execution_time()

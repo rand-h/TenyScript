@@ -1,0 +1,36 @@
+// ============================================================
+// 📊 DASHBOARD ANALYTICS (VERSION ROBUSTE)
+// ============================================================
+
+$>titre("RAPPORT DE VENTES")
+$>dom_inject_banner("Calcul des données...", "orange")
+
+// 1. DONNÉES
+$>var mois = "Jan,Fév,Mar,Avr,Mai,Juin"
+$>var ventes = "1200,1500,1100,1800,2200,1950"
+
+// 2. GRAPHIQUE
+// Le moteur va maintenant télécharger Chart.js tout seul et attendre qu'il soit prêt
+$>print("<div style='background:#1e1e1e; padding:15px; border-radius:8px; border:1px solid #333;'>")
+$>print("<h3>📈 Évolution du Chiffre d'Affaires</h3>")
+$>print($>chart_line($mois, $ventes, "Ventes ($)"))
+$>print("</div>")
+
+// 3. TABLEAU
+$>espace(10)
+$>titre("DÉTAIL")
+
+$>print("<table style='width:100%; border-collapse:collapse; color:#eee;'>")
+$>print("<tr style='background:#333; text-align:left;'><th style='padding:10px;'>Mois</th><th>Ventes</th></tr>")
+
+$>var tabMois = $>split($mois, ",")
+$>var tabVentes = $>split($ventes, ",")
+
+$>for(m, $tabMois) {
+    $>var v = $>shift($tabVentes)
+    $>print("<tr style='border-bottom:1px solid #444;'>")
+    $>print("  <td style='padding:10px;'>" + $m + "</td>")
+    $>print("  <td><b>" + $v + " $</b></td>")
+    $>print("</tr>")
+}
+$>print("</table>")

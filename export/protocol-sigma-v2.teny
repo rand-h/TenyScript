@@ -1,0 +1,128 @@
+$>titre(☣️ PROTOCOLE SIGMA : LE TEST DU CHAOS ☣️)
+$>print("Chargement du noyau physique...", "gray")
+$>call(stdLib.wait, 500)
+
+$>space(10)
+$>titre(1. SIMULATION PHYSIQUE : GRAVITÉ)
+$>print("Génération de la chambre de confinement (10x10)...", "blue")
+
+$>comment(Création du vide)
+$>var = grid = $>call(stdLib.matrix_new, 10, 10, " ")
+
+$>comment(Fonction pour faire tomber le sable)
+$>def=simuler_gravite(g) {
+    $>comment(On parcourt de bas en haut pour ne pas déplacer le même grain 2 fois)
+    $>var = row = 8
+    $>repeat(9) {
+        $>var = col = 0
+        $>repeat(10) {
+            $>var = cell = $>call(stdLib.matrix_get, $g, $row, $col)
+            
+            $>comment(Si c'est du sable 🔸)
+            $>if($cell == "🔸") {
+                $>var = nextRow = $>math($row + 1)
+                $>var = below = $>call(stdLib.matrix_get, $g, $nextRow, $col)
+                
+                $>comment(Si en dessous c'est vide, on tombe)
+                $>if($below == " ") {
+                    $>var = _ = $>call(stdLib.matrix_set, $g, $nextRow, $col, "🔸")
+                    $>var = _ = $>call(stdLib.matrix_set, $g, $row, $col, " ")
+                }
+            }
+            $>set(col = $col + 1)
+        }
+        $>set(row = $row - 1)
+    }
+    $>var = return = $g
+}
+
+$>print("Injection et Simulation (5 Frames)...")
+
+$>comment(On fait tomber du sable à des positions aléatoires et on simule)
+$>repeat(5) {
+    $>comment(Injection de 3 grains en haut)
+    $>var = _ = $>call(stdLib.matrix_set, $grid, 0, $>random(0,9), "🔸")
+    $>var = _ = $>call(stdLib.matrix_set, $grid, 0, $>random(0,9), "🔸")
+    $>var = _ = $>call(stdLib.matrix_set, $grid, 1, $>random(0,9), "🔸")
+    
+    $>comment(Calcul physique)
+    $>set(grid = $>call(simuler_gravite, $grid))
+    
+    $>print("Frame " + $index + " :")
+    $>print($>call(stdLib.matrix_view, $grid))
+    $>call(stdLib.wait, 200)
+}
+
+
+$>space(20)
+$>titre(2. CRYPTO-MINAGE : NOMBRES PREMIERS)
+$>print("Recherche des nombres premiers jusqu'à 50...")
+
+$>var = liste_premiers = []
+$>var = n = 2
+
+$>repeat(49) {
+    $>var = isPrime = 1
+    $>var = div = 2
+    
+    $>comment(Boucle de vérification simplifiée)
+    $>if($n > 2) {
+        $>var = limit = $>math($n - 1)
+        $>repeat($limit) {
+            $>comment(Si n modulo div == 0 alors pas premier)
+            $>if($>math($n % $div) == 0) {
+               $>set(isPrime = 0)
+            }
+            $>set(div = $div + 1)
+        }
+    }
+    
+    $>if($isPrime == 1) {
+        $>var = _ = $>call(stdLib.push, $liste_premiers, $n)
+    }
+    $>set(n = $n + 1)
+}
+
+$>print("Résultat du minage :")
+$>print($liste_premiers)
+
+
+$>space(20)
+$>titre(3. MANIPULATION GÉNÉTIQUE (STRING))
+$>print("Séquençage ADN...")
+$>var = adn = "A-G-C-T-A-A-G-C-T-T"
+$>print("Chaîne originale : " + $adn)
+
+$>comment(Test de split et replace)
+$>var = brins = $>call(stdLib.split, $adn, "-")
+$>print("Extraction des brins (Array) : " + $brins)
+
+$>var = mutation = $>call(stdLib.replace, $adn, "A", "☢️")
+$>print("Mutation radioactive : " + $mutation)
+
+
+$>space(20)
+$>titre(4. LE TROU NOIR (ARRAY STRESS))
+$>print("Tentative de saturation mémoire (1000 items)...")
+$>var = blackhole = []
+$>var = i = 0
+
+$>comment(Attention : ceci teste la vitesse de push)
+$>repeat(1000) {
+    $>var = _ = $>call(stdLib.push, $blackhole, "Matière_" + $i)
+    $>set(i = $i + 1)
+}
+
+$>var = taille = $>call(stdLib.len, $blackhole)
+$>if($taille == 1000) {
+    $>print("✅ Singularité atteinte : " + $taille + " éléments absorbés.", "purple")
+} $>else {
+    $>alerte(❌ Fuite de matière détectée !)
+}
+
+$>space(20)
+$>titre(DIAGNOSTIC FINAL)
+$>meteo
+$>today
+$>amen
+$>execution_time()

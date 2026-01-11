@@ -1,0 +1,18 @@
+// Fichier: export/readme.teny
+
+$>print("📂 PROJET DÉMO CHARGÉ", "#4caf50")
+$>print("-----------------------------------", "#666")
+
+Bienvenue dans l'environnement de développement **TenyStudio**.
+Ce dossier virtuel a été chargé depuis le serveur.
+
+$>var date = $>date()
+Nous sommes le : $>print($date, "#ffca28")
+
+Instructions :
+1. Ouvrez le fichier "exemple.teny" pour voir un script complet.
+2. Testez le bouton "Exécuter" (F5).
+3. Modifiez le code pour tester le "Live Reload".
+
+$>print("-----------------------------------", "#666")
+$>button("Lancer l'exemple", "$>import('exemple')")

@@ -1,0 +1,91 @@
+// ============================================================
+// 🔥 TENY SCRIPT : ULTIMATE STRESS TEST
+// ============================================================
+
+$>titre("⚠️ TEST DE PERFORMANCE EXTRÊME")
+$>dom_inject_banner("Analyse de stabilité en cours...", "#d50000")
+
+// ------------------------------------------------------------
+// 1. TEST DE CALCUL INTENSIF (CPU)
+// ------------------------------------------------------------
+$>print("1. Démarrage du Burn Test CPU...", "orange")
+
+$>var total = 0
+$>var i = 0
+
+// On tente 1000 itérations avec des maths à chaque tour
+// Cela génère ~3000 opérations internes (parsing + eval + set)
+$>repeat(1000) {
+    $>var i = $>math($i + 1)
+    $>var x = $>math(sqrt($i) * 10)
+    $>var total = $>math($total + $x)
+}
+
+$>print("✅ CPU Test fini. Résultat : " + $total, "lime")
+$>espace(10)
+
+// ------------------------------------------------------------
+// 2. TEST MÉMOIRE (String Explosion)
+// ------------------------------------------------------------
+$>print("2. Test Mémoire (Croissance Exponentielle)...", "orange")
+
+$>var chaine = "X"
+$>var tour = 0
+
+// 2^13 = 8192 caractères. 
+// Attention : monter plus haut peut crasher si MAX_OPS est bas.
+$>repeat(13) {
+    $>var chaine = $chaine + $chaine
+    $>var tour = $>math($tour + 1)
+    $>print("  -> Tour " + $tour + " : taille " + $>len($chaine))
+}
+
+$>print("✅ Mémoire OK. Chaîne finale générée.", "lime")
+$>espace(10)
+
+// ------------------------------------------------------------
+// 3. TEST DE RENDU (DOM Flood)
+// ------------------------------------------------------------
+$>print("3. Inondation du Panneau (DOM Flood)...", "orange")
+$>wait(1000)
+
+// Affiche 500 lignes rapidement pour voir si le scroll tient
+$>var k = 0
+$>repeat(500) {
+    $>print("Log système rapide ligne n°" + $k, "#333")
+    $>var k = $>math($k + 1)
+}
+
+$>print("✅ DOM Flood terminé.", "lime")
+$>espace(10)
+
+// ------------------------------------------------------------
+// 4. TEST DE FONCTION (Récursivité & Scope)
+// ------------------------------------------------------------
+$>print("4. Test de Fonctions...", "orange")
+
+// Définition d'une fonction personnalisée
+$>def carre(x) {
+    $>var res = $>math($x * $x)
+    $>return $res
+}
+
+$>var val = 12
+$>var res_func = $>carre($val)
+
+$>print("Calcul via fonction : 12² = " + $res_func)
+$>if($res_func == 144) {
+    $>print("✅ Fonctions OK", "lime")
+} $>else {
+    $>print("❌ Erreur Fonctions", "red")
+}
+
+// ------------------------------------------------------------
+// CONCLUSION
+// ------------------------------------------------------------
+$>wait(500)
+$>titre("RÉSULTAT DU DIAGNOSTIC")
+$>dom_style("#preview-frame", "background", "#111")
+$>dom_style("#preview-frame", "color", "#eee")
+$>print("Si vous lisez ceci, votre moteur a survécu.", "#00e676")
+$>alerte("Fin du protocole.")
