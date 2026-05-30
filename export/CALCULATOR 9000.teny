@@ -1,82 +1,61 @@
 // ============================================================
-// 🧮 CALCULATOR 9000
+// CALCULATRICE 9000 (Syntaxe propre V3)
 // ============================================================
-
-$>titre("CALCULATRICE <br>") 
-
-// 1. ÉCRAN DE CALCUL
-// On utilise un input désactivé pour l'affichage, style LCD
-$>print("<input id='ecran' type='text' value='' disabled style='
-    width: 30%; 
-    height: 60px; 
-    background: #8fa584; 
-    color: #111; 
-    font-family: monospace; 
-    font-size: 2em; 
-    text-align: right; 
-    padding: 10px; 
-    border: 4px solid #333; 
-    border-radius: 5px;
-    margin-bottom: 10px;
-'>")
-
-// 2. FONCTIONS LOGIQUES
-// On définit les fonctions que les boutons vont appeler
 
 $>def clic(val) {
     $>var actuel = $>dom_val("ecran")
-    $>dom_set_val("#ecran", $actuel + $val)
+    $>dom_set_val("ecran", "$actuel$val")
 }
 
-$>def clear() {
-    $>dom_set_val("#ecran", "")
+$>def vider() {
+    $>dom_set_val("ecran", "")
 }
 
 $>def calculer() {
     $>var expression = $>dom_val("ecran")
-    // Astuce : on utilise une variable intermédiaire pour le calcul
     $>var resultat = $>math($expression)
-    $>dom_set_val("#ecran", $resultat)
+    $>dom_set_val("ecran", $resultat)
 }
 
-// 3. GÉNÉRATION DU CLAVIER
-// On utilise une boucle pour générer les chiffres proprement
+// Composant Bouton épuré
+$>def Bouton(label, action, bg_color, color = "#fff") {
+    $>button(`
+        onclick="$action" 
+        style='display: flex; align-items: center; justify-content: center; width: 100%; height: 50px; font-size: 1.2em; border-radius: 5px; border: none; cursor: pointer; background: $bg_color; color: $color; font-weight:bold; margin: 2px;'
+    `, 
+    {$label})
+}
 
-$>var styleChiffre = "#444"
-$>var styleOp = "#ffca28; color: black"
-$>var styleEgal = "#4caf50"
-$>var styleClear = "#f44336"
+$>var num_bg = "#444"
+$>var op_bg = "#f59910"
 
-// Ligne 1 : 7 8 9 /
-$>print("<div>")
-$>print($>button("7", "$>clic(7)", $styleChiffre))
-$>print($>button("8", "$>clic(8)", $styleChiffre))
-$>print($>button("9", "$>clic(9)", $styleChiffre))
-$>print($>button("÷", "$>clic('/')", $styleOp))
-$>print("</div>")
+$>div("style='background: #222; padding: 15px; border-radius: 10px; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: sans-serif;'", {
+    
+    $>input("id='ecran' type='text' disabled style='width: 100%; height: 50px; background: #8fa584; color: #111; font-family: monospace; font-size: 1.5em; text-align: right; padding: 10px; border: 2px solid #333; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box;'")
 
-// Ligne 2 : 4 5 6 *
-$>print("<div>")
-$>print($>button("4", "$>clic(4)", $styleChiffre))
-$>print($>button("5", "$>clic(5)", $styleChiffre))
-$>print($>button("6", "$>clic(6)", $styleChiffre))
-$>print($>button("×", "$>clic('*')", $styleOp))
-$>print("</div>")
-
-// Ligne 3 : 1 2 3 -
-$>print("<div>")
-$>print($>button("1", "$>clic(1)", $styleChiffre))
-$>print($>button("2", "$>clic(2)", $styleChiffre))
-$>print($>button("3", "$>clic(3)", $styleChiffre))
-$>print($>button("-", "$>clic('-')", $styleOp))
-$>print("</div>")
-
-// Ligne 4 : C 0 = +
-$>print("<div>")
-$>print($>button("C", "$>clear()", $styleClear))
-$>print($>button("0", "$>clic(0)", $styleChiffre))
-$>print($>button("=", "$>calculer()", $styleEgal))
-$>print($>button("+", "$>clic('+')", $styleOp))
-$>print("</div>")
-
-$>dom_inject_banner("Calculatrice prête.", "#333")
+    // La syntaxe $>clic(7) est maintenant native et propre :
+    $>div("style='display: flex;'", {
+        $>Bouton("7", "$>clic(7)", $num_bg)
+        $>Bouton("8", "$>clic(8)", $num_bg)
+        $>Bouton("9", "$>clic(9)", $num_bg)
+        $>Bouton("/", "$>clic('/')", $op_bg, "#111")
+    })
+    $>div("style='display: flex;'", {
+        $>Bouton("4", "$>clic(4)", $num_bg)
+        $>Bouton("5", "$>clic(5)", $num_bg)
+        $>Bouton("6", "$>clic(6)", $num_bg)
+        $>Bouton("*", "$>clic('*')", $op_bg, "#111")
+    })
+    $>div("style='display: flex;'", {
+        $>Bouton("1", "$>clic(1)", $num_bg)
+        $>Bouton("2", "$>clic(2)", $num_bg)
+        $>Bouton("3", "$>clic(3)", $num_bg)
+        $>Bouton("-", "$>clic('-')", $op_bg, "#111")
+    })
+    $>div("style='display: flex;'", {
+        $>Bouton("C", "$>vider()", "#f44336")
+        $>Bouton("0", "$>clic(0)", $num_bg)
+        $>Bouton("=", "$>calculer()", "#4caf50")
+        $>Bouton("+", "$>clic('+')", $op_bg, "#111")
+    })
+})

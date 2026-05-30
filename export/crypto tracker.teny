@@ -1,76 +1,75 @@
 // ============================================================
-// 💎 CRYPTO STREAMER (NO-BLINK)
+// 💎 CRYPTO STREAMER (NO-BLINK ENGINE EDITION)
 // ============================================================
 
-// 1. Initialisation unique
-$>js("https://cdn.jsdelivr.net/npm/chart.js")
-$>titre("MARCHÉ CRYPTO (LIVE STREAM)")
-$>dom_inject_banner("Stream connecté", "#00e676")
+// 1. Initialisation
+$>js_url("https://cdn.jsdelivr.net/npm/chart.js")
+$>css_style() {
+    .crypto-card { flex:1; background:#1e1e1e; padding:15px; border-radius:8px; border:1px solid #444; }
+    .price { font-size:1.8em; font-weight:bold; color:#fff; }
+    .change { font-size:1em; }
+    .green { color:#4caf50; }
+    .red { color:#f44336; }
+}
 
-// 2. Interface Statique (Dessinée une seule fois)
-$>print("<div style='display:flex; gap:10px;'>")
+// 2. Structure HTML Initiale
+$>div("id='streamer_root'", {
+    $>div("style='display:flex; gap:10px;'", {
+        $>div("class='crypto-card' style='border-color:#f7931a;'", {
+            $>div("style='color:#888; font-size:0.9em;'", {"BITCOIN (BTC)"})
+            $>div("id='price_btc' class='price'", {"Chargement..."})
+            $>div("id='change_btc' class='change'", {"--"})
+        })
+        $>div("class='crypto-card' style='border-color:#627eea;'", {
+            $>div("style='color:#888; font-size:0.9em;'", {"ETHEREUM (ETH)"})
+            $>div("id='price_eth' class='price'", {"Chargement..."})
+            $>div("id='change_eth' class='change'", {"--"})
+        })
+    })
+    $>div("id='last_update' style='text-align:right; color:#555; font-size:0.8em; margin-top:5px;'", {"En attente..."})
+})
 
-// Carte BTC avec des IDs uniques pour le ciblage
-$>print("<div style='flex:1; background:#1e1e1e; padding:15px; border-radius:8px; border:1px solid #f7931a;'>")
-$>print("  <div style='color:#888; font-size:0.9em;'>BITCOIN (BTC)</div>")
-$>print("  <div id='price_btc' style='font-size:1.8em; font-weight:bold; color:#fff;'>Chargement...</div>")
-$>print("  <div id='change_btc' style='font-size:1em;'>--</div>")
-$>print("</div>")
-
-// Carte ETH avec des IDs uniques
-$>print("<div style='flex:1; background:#1e1e1e; padding:15px; border-radius:8px; border:1px solid #627eea;'>")
-$>print("  <div style='color:#888; font-size:0.9em;'>ETHEREUM (ETH)</div>")
-$>print("  <div id='price_eth' style='font-size:1.8em; font-weight:bold; color:#fff;'>Chargement...</div>")
-$>print("  <div id='change_eth' style='font-size:1em;'>--</div>")
-$>print("</div>")
-
-$>print("</div>")
-
-// Zone de log discret
-$>print("<div id='last_update' style='text-align:right; color:#555; font-size:0.8em; margin-top:5px;'>En attente...</div>")
-
-
-// 3. LA BOUCLE MAGIQUE (Fonction récursive)
-// Cette fonction va s'appeler elle-même indéfiniment sans recharger la page
+// 3. LA BOUCLE MAGIQUE
 $>def updateLoop() {
-    // A. Récupération silencieuse
     $>var url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true"
     $>var data = $>http_get($url)
     
     $>if($data != null) {
-        // B. Extraction
+        // Extraction avec le moteur
         $>var b_price = $>get($data, "bitcoin.usd")
         $>var b_chg = $>get($data, "bitcoin.usd_24h_change")
         $>var e_price = $>get($data, "ethereum.usd")
         $>var e_chg = $>get($data, "ethereum.usd_24h_change")
         
-        // C. Injection chirurgicale (DOM UPDATE)
-        // On ne redessine pas, on change juste le texte des IDs
-        $>dom_update("#price_btc", $b_price + " $")
-        $>dom_update("#price_eth", $e_price + " $")
+        // Mise à jour ciblée (DOM chirurgical)
+        $>dom_update("#price_btc", "$b_price $")
+        $>dom_update("#price_eth", "$e_price $")
         
-        // Gestion couleur BTC
+        // Logique couleur BTC
+        $>var classB = "red"
+        $>var symB = "▼"
         $>if($b_chg > 0) {
-            $>dom_update("#change_btc", "<span style='color:#4caf50'>▲ " + $b_chg + "%</span>")
-        } $>else {
-            $>dom_update("#change_btc", "<span style='color:#f44336'>▼ " + $b_chg + "%</span>")
+            $>var classB = "green"
+            $>var symB = "▲"
         }
+        $>dom_update("#change_btc", "<span class='$classB'>$symB $b_chg %</span>")
         
-        // Gestion couleur ETH
+        // Logique couleur ETH
+        $>var classE = "red"
+        $>var symE = "▼"
         $>if($e_chg > 0) {
-            $>dom_update("#change_eth", "<span style='color:#4caf50'>▲ " + $e_chg + "%</span>")
-        } $>else {
-            $>dom_update("#change_eth", "<span style='color:#f44336'>▼ " + $e_chg + "%</span>")
+            $>var classE = "green"
+            $>var symE = "▲"
         }
+        $>dom_update("#change_eth", "<span class='$classE'>$symE $e_chg %</span>")
         
-        $>dom_update("#last_update", "Dernière synchro : " + $>date())
+        $>var now = $>date()
+        $>dom_update("#last_update", "Synchro : $now")
     }
 
-    // D. On relance la boucle dans 5 secondes (5000ms)
-    // C'est ça qui crée le stream !
     $>wait(5000)
     $>updateLoop()
 }
 
-// 4. Lancement initial
+// Lancement
 $>updateLoop()

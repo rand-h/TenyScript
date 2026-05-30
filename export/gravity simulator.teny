@@ -1,0 +1,218 @@
+// =====================================================================
+// 🌌 TENY-PHYSICS : MOTEUR DE GRAVITÉ & PARTICULES SUR CANVAS
+// =====================================================================
+
+$>css_style() {
+    .physics-console { background: #12121a; padding: 20px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0, 136, 255, 0.15); width: 100%; max-width: 700px; box-sizing: border-box; }
+    .header { font-size: 1.4em; font-weight: bold; margin-bottom: 15px; color: #0088ff; text-align: center; letter-spacing: 2px; text-transform: uppercase; }
+    
+    .canvas-container { width: 100%; height: 400px; background: #000; border: 2px solid #222; border-radius: 6px; overflow: hidden; margin-bottom: 20px; position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+    canvas { display: block; width: 100%; height: 100%; }
+    
+    .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .btn { padding: 15px; background: #1a1a2e; color: #fff; border: 1px solid #0088ff; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.2s; font-family: inherit; font-size: 1em; text-transform: uppercase; }
+    .btn:hover { background: #0088ff; color: #000; box-shadow: 0 0 15px #0088ff; }
+    
+    .btn-warn { border-color: #ffcc00; color: #ffcc00; }
+    .btn-warn:hover { background: #ffcc00; color: #000; box-shadow: 0 0 15px #ffcc00; }
+    
+    .btn-danger { border-color: #ff0055; color: #ff0055; }
+    .btn-danger:hover { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
+}
+
+// ---------------------------------------------------------
+// 1. MOTEUR PHYSIQUE NATIF (JavaScript Canvas Engine)
+// ---------------------------------------------------------
+$>js_script() {
+    window.PhysicsEngine = {
+        ctx: null,
+        width: 0,
+        height: 0,
+        particles: [],
+        gravity: 0.6,
+        friction: 0.8,
+        colors: ['#0088ff', '#00ffcc', '#ffcc00', '#ff0055', '#bf00ff', '#ffffff'],
+        running: false,
+        
+        init: function() {
+            const cvs = document.getElementById('physics_canvas');
+            if(!cvs) return false;
+            
+            this.ctx = cvs.getContext('2d');
+            // Ajuster la résolution interne du canvas à sa taille d'affichage CSS
+            this.width = cvs.width = cvs.offsetWidth;
+            this.height = cvs.height = cvs.offsetHeight;
+            
+            this.running = true;
+            this.loop();
+            return true;
+        },
+        
+        addParticles: function(amount) {
+            for(let i=0; i<amount; i++) {
+                this.particles.push({
+                    x: this.width / 2 + (Math.random() * 40 - 20), // Apparaît au centre
+                    y: 40 + Math.random() * 20,
+                    vx: (Math.random() - 0.5) * 15, // Vitesse X aléatoire
+                    vy: (Math.random() - 0.5) * 5,  // Vitesse Y aléatoire
+                    r: Math.random() * 4 + 2,       // Rayon entre 2 et 6px
+                    color: this.colors[Math.floor(Math.random() * this.colors.length)]
+                });
+            }
+            this.updateStats();
+        },
+        
+        explode: function() {
+            for(let p of this.particles) {
+                p.vx = (Math.random() - 0.5) * 40;
+                p.vy = (Math.random() - 0.5) * 40 - 10; // Pousse un peu plus vers le haut
+            }
+        },
+        
+        toggleGravity: function() {
+            this.gravity = this.gravity > 0 ? 0 : 0.6;
+            return this.gravity > 0 ? "GRAVITÉ : ON" : "GRAVITÉ : OFF";
+        },
+        
+        clear: function() {
+            this.particles = [];
+            this.updateStats();
+        },
+        
+        updateStats: function() {
+            let st = document.getElementById('stat_count');
+            if(st) st.innerText = this.particles.length;
+        },
+        
+        loop: function() {
+            if(!window.PhysicsEngine.running) return;
+            let pe = window.PhysicsEngine;
+            
+            // Effet de traînée (on ne repeint pas tout en noir opaque, mais avec de la transparence)
+            pe.ctx.fillStyle = 'rgba(5, 5, 8, 0.25)';
+            pe.ctx.fillRect(0, 0, pe.width, pe.height);
+            
+            // Mise à jour et dessin de chaque particule
+            for(let p of pe.particles) {
+                // Application de la physique
+                p.vy += pe.gravity;
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                // Rebond sur le Sol
+                if(p.y + p.r > pe.height) { 
+                    p.y = pe.height - p.r; 
+                    p.vy *= -pe.friction; 
+                    p.vx *= 0.98; // Frottement au sol
+                }
+                // Rebond Plafond (si pas de gravité)
+                else if (p.y - p.r < 0) {
+                    p.y = p.r;
+                    p.vy *= -pe.friction;
+                }
+                
+                // Rebond Murs (Droite et Gauche)
+                if(p.x + p.r > pe.width) { 
+                    p.x = pe.width - p.r; 
+                    p.vx *= -pe.friction; 
+                }
+                else if(p.x - p.r < 0) { 
+                    p.x = p.r; 
+                    p.vx *= -pe.friction; 
+                }
+                
+                // Dessin du cercle
+                pe.ctx.beginPath();
+                pe.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                pe.ctx.fillStyle = p.color;
+                pe.ctx.fill();
+            }
+            
+            // Le navigateur optimise l'appel de cette fonction pour coller au taux de rafraîchissement de l'écran (ex: 60 FPS)
+            requestAnimationFrame(pe.loop);
+        }
+    };
+    return "";
+}
+
+// ---------------------------------------------------------
+// 2. TÉLÉCOMMANDE TENYSCRIPT
+// ---------------------------------------------------------
+
+$>def ActionAjouter() {
+    $>js_script() { window.PhysicsEngine.addParticles(50); return ""; }
+}
+
+$>def ActionExploser() {
+    $>js_script() { window.PhysicsEngine.explode(); return ""; }
+}
+
+$>def ActionGravite() {
+    $>js_script() { window.TenyGlobalVars.g_status = window.PhysicsEngine.toggleGravity(); return ""; }
+    // Mise à jour du bouton en direct
+    $>dom_update("#btn_gravite", $g_status)
+}
+
+$>def ActionNettoyer() {
+    $>js_script() { window.PhysicsEngine.clear(); return ""; }
+}
+
+
+// ---------------------------------------------------------
+// 3. INTERFACE HTML 
+// ---------------------------------------------------------
+
+$>div("class='physics-console'", {
+    
+    $>div("class='header'", { 
+        SIMULATEUR DE PARTICULES 
+    })
+    
+    $>div("style='display:flex; justify-content:space-between; margin-bottom:10px; color:#888; font-size:0.9em;'", {
+        <span>PARTICULES ACTIVES : <span id='stat_count' style='color:#0088ff; font-weight:bold; font-size:1.2em;'>0</span></span>
+        <span>RENDU : CANVAS 2D</span>
+    })
+    
+    // Le fameux élément HTML5 Canvas !
+    $>div("class='canvas-container'", {
+        <canvas id='physics_canvas'></canvas>
+    })
+    
+    // Grille de boutons
+    $>div("class='controls-grid'", {
+        $>button("class='btn' onclick='window.TenyGlobalRegistry.ActionAjouter()'", { 
+            +50 PARTICULES 
+        })
+        
+        $>button("class='btn btn-warn' onclick='window.TenyGlobalRegistry.ActionExploser()'", { 
+            💥 EXPLOSION 
+        })
+        
+        $>button("id='btn_gravite' class='btn' onclick='window.TenyGlobalRegistry.ActionGravite()'", { 
+            GRAVITÉ : ON 
+        })
+        
+        $>button("class='btn btn-danger' onclick='window.TenyGlobalRegistry.ActionNettoyer()'", { 
+            NETTOYER 
+        })
+    })
+})
+
+// ---------------------------------------------------------
+// 4. LANCEUR SÉCURISÉ
+// ---------------------------------------------------------
+$>js_script() {
+    // On attend que la balise <canvas> soit bien présente dans la page
+    let checkCanvas = setInterval(() => {
+        let cvs = document.getElementById('physics_canvas');
+        if (cvs) {
+            clearInterval(checkCanvas);
+            window.PhysicsEngine.init();
+            
+            // On ajoute 100 particules au démarrage pour que ce soit joli tout de suite
+            window.PhysicsEngine.addParticles(100);
+        }
+    }, 50);
+
+    return "";
+}

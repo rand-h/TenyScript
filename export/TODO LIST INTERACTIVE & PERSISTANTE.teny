@@ -1,70 +1,100 @@
 // ============================================================
-// ✅ TODO LIST INTERACTIVE & PERSISTANTE
+// ✅ TODO LIST NATIVE & ROBUSTE (VERSION CORRIGÉE)
 // ============================================================
 
-$>titre("MA LISTE DE TÂCHES")
-$>dom_inject_banner("Application chargée", "#2e7d32")
+// 1. FORCER L'ENREGISTREMENT DES FONCTIONS SYSTÈME
+// Ceci règle l'erreur "len is not defined"
+$>js_script() {
+    window.TenyGlobalRegistry.len = (arg) => {
+        if (Array.isArray(arg)) return arg.length;
+        if (typeof arg === 'object' && arg !== null) return Object.keys(arg).length;
+        return arg ? arg.toString().length : 0;
+    };
+    return "";
+}
 
-// 1. CHARGEMENT DES DONNÉES
-// On essaie de charger la liste. Si vide, on crée un tableau vide.
-$>var saved = $>load_data("mes_taches")
-$>if($saved == null) { $>var saved = [] }
+$>css_style() {
+    .todo-card { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; max-width: 500px; margin: 0 auto; color: #fff; font-family: sans-serif; }
+    .todo-item { background: #2d2d2d; padding: 10px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; }
+    .todo-btn { cursor:pointer; background:#d32f2f; color:white; border:none; padding:5px 10px; border-radius:3px; font-weight:bold; }
+    .add-btn { background:#007acc; color:white; border:none; padding:10px; width:100%; margin-top:10px; cursor:pointer; font-weight:bold; border-radius:4px; }
+}
 
-// 2. FONCTION D'AFFICHAGE (Render)
-// On définit une zone HTML qui sera mise à jour
-$>print("<div id='zone_liste'></div>")
-
-// On définit une fonction pour générer le HTML de la liste
-$>def renderList(liste) {
-    $>var html = ""
-    $>var count = 0
+// ---------------------------------------------------------
+// 🧠 LOGIQUE (Classe persistante)
+// ---------------------------------------------------------
+$>class TodoApp() {
+    $>var this.items = $>load_data("mes_taches")
     
-    $>for(tache, $liste) {
-        // Bouton supprimer pour chaque tâche
-        // Notez la complexité : on génère du code TenyScript DANS le bouton
-        $>var codeSuppr = "$>var l = $>load_data('mes_taches'); $>pop($l); $>save_data('mes_taches', $l); $>refreshApp($l);"
+    $>method init() {
+        $>if($this.items == null) { $>var this.items = [] }
+    }
+
+    $>method add() {
+        $>var val = $>dom_val("#input_tache")
         
-        $>var btnDel = $>button("X", $codeSuppr, "#d32f2f")
-        $>var html = $html + "<div style='background:#252526; padding:8px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;'><span>" + $tache + "</span>" + $btnDel + "</div>"
-        $>var count = $>math($count + 1)
+        // Calcul manuel de la longueur pour éviter les erreurs de balise
+        $>var n = $>len($val)
+        
+        $>if($n > 0) {
+            $>push($this.items, $val)
+            $>save_data("mes_taches", $this.items)
+            $>dom_set_val("#input_tache", "")
+            $>dom_update("#zone_liste", $>Render())
+        }
     }
-    
-    $>if($count == 0) { $>var html = "<i style='color:gray'>Aucune tâche pour le moment.</i>" }
-    
-    // Mise à jour du DOM
-    $>dom_update("#zone_liste", $html)
+
+    $>method remove(idx) {
+        $>var i = $>math($idx)
+        $>var new_list = []
+        $>var total = $>len($this.items)
+        $>var k = 0
+        $>while($k < $total) {
+            $>if($k != $i) {
+                $>push($new_list, $>get($this.items, $k))
+            }
+            $>var k = $>math($k + 1)
+        }
+        $>var this.items = $new_list
+        $>save_data("mes_taches", $this.items)
+        $>dom_update("#zone_liste", $>Render())
+    }
 }
 
-// Fonction pour tout rafraîchir (appelée par les boutons)
-$>def refreshApp(data) {
-    $>renderList($data)
+$>new App = TodoApp()
+$>App.init()
+
+// ---------------------------------------------------------
+// 🖥️ VUE (Interface)
+// ---------------------------------------------------------
+$>def Render() {
+    $>var html = ""
+    $>var total = $>len($App.items)
+    $>var k = 0
+    
+    $>while($k < $total) {
+        $>var item = $>get($App.items, $k)
+        $>var html = $html + "<div class='todo-item'><span>" + $item + "</span><button class='todo-btn' onclick='$>BridgeRemove($k)'>X</button></div>"
+        $>var k = $>math($k + 1)
+    }
+    
+    $>if($total == 0) { $>var html = "<i style='color:gray'>Aucune tâche.</i>" }
+    $html
 }
 
-// 3. AFFICHAGE INITIAL
-$>renderList($saved)
+// Ponts vers le Global Registry
+$>def BridgeRemove(idx) { $>App.remove($idx) }
+$>def BridgeAdd() { $>App.add() }
 
-// 4. ZONE DE SAISIE
-$>espace(15)
-$>titre("NOUVELLE TÂCHE")
-
-$>input("input_tache", "Entrez une tâche ici...")
-$>espace(5)
-
-// 5. LOGIQUE D'AJOUT
-// Ce code sera exécuté quand on clique sur "Ajouter"
-$>var codeAjout = "
-    $>var nouv = $>dom_val('input_tache');
-    $>if($>len($nouv) > 0) {
-        $>var liste = $>load_data('mes_taches');
-        $>if($liste == null) { $>var liste = [] };
-        $>push($liste, $nouv);
-        $>save_data('mes_taches', $liste);
-        $>refreshApp($liste);
-        $>dom_inject_banner('Tâche ajoutée !', '#2e7d32');
-        $>dom_style('#input_tache', 'value', ''); // Reset input (via astuce ou update value manuelle en JS si besoin)
-    } $>else {
-        $>dom_inject_banner('Veuillez écrire quelque chose', '#c62828');
-    }
-"
-
-$>print($>button("AJOUTER LA TÂCHE", $codeAjout, "#007acc"))
+// ---------------------------------------------------------
+// 🚀 POINT D'ENTRÉE
+// ---------------------------------------------------------
+$>div("class='todo-card'", {
+    $>div("style='font-size:1.5em; font-weight:bold; margin-bottom:15px;'", {"MA LISTE DE TÂCHES"})
+    
+    $>div("id='zone_liste'", { $>Render() })
+    
+    $>espace(10)
+    $>print($>input("input_tache", "Nouvelle tâche..."))
+    $>button("class='add-btn' onclick='$>BridgeAdd()'", {"AJOUTER"})
+})

@@ -1,0 +1,186 @@
+// =====================================================================
+// 🧠 TENY-MEMORY : 100% PURE TENYSCRIPT (ZERO JS)
+// =====================================================================
+
+$>css_style() {
+    body { background: #1a1a2e; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+    .memory-console { background: #16213e; padding: 20px; border-radius: 12px; border: 2px solid #0f3460; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; box-sizing: border-box; }
+    .header { display: flex; justify-content: space-between; font-size: 1.5em; font-weight: bold; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e94560; }
+    
+    .memory-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .card { background: #0f3460; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2.5em; cursor: pointer; border-radius: 8px; border: 2px solid #222; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s; user-select: none; }
+    .card:active { transform: scale(0.95); }
+    
+    .btn-replay { width: 100%; padding: 15px; background: #e94560; color: #fff; border: none; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+    .btn-replay:hover { background: #ff5773; box-shadow: 0 0 15px #e94560; }
+}
+
+// ---------------------------------------------------------
+// 1. REGISTRES GLOBAUX TENYSCRIPT (Base de données)
+// ---------------------------------------------------------
+$>var M_CARDS = []
+// L'état de chaque carte : 0 = Cachée, 1 = Retournée, 2 = Trouvée
+$>var M_STATE = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+$>var M_FLIPPED_1 = -1
+$>var M_FLIPPED_2 = -1
+$>var M_LOCK = "non"
+$>var M_SCORE = 0
+
+// ---------------------------------------------------------
+// 2. LOGIQUE NATIVE DU JEU (100% TenyScript)
+// ---------------------------------------------------------
+
+// Algorithme de mélange Fisher-Yates natif !
+$>def InitGame() {
+    $>var M_STATE = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    $>var M_FLIPPED_1 = -1
+    $>var M_FLIPPED_2 = -1
+    $>var M_LOCK = "non"
+    $>var M_SCORE = 0
+    $>dom_update("#score_val", "0")
+    
+    // Le paquet de cartes de départ (8 paires = 16 cartes)
+    $>var M_CARDS = ["🍎","🍎","🍉","🍉","🍌","🍌","🍇","🍇","🍒","🍒","🍓","🍓","🥑","🥑","🍍","🍍"]
+    
+    // Mélange des cartes (Boucle mathématique)
+    $>var i = 15
+    $>while($i > 0) {
+        $>var j = $>random(0, $i)
+        
+        $>var val_i = $>get($M_CARDS, $i)
+        $>var val_j = $>get($M_CARDS, $j)
+        
+        // Echange des deux valeurs (Swap)
+        $>var _ = $>set($M_CARDS, $i, $val_j)
+        $>var _ = $>set($M_CARDS, $j, $val_i)
+        
+        $>var i = $>math($i - 1)
+    }
+    
+    // Génération de la grille (Rendu HTML)
+    $>var html = ""
+    $>var k = 0
+    $>while($k < 16) {
+        $>var html = $html + "<div id='card_" + $k + "' class='card' onclick='window.TenyGlobalRegistry.ClickCard(" + $k + ")'>❓</div>"
+        $>var k = $>math($k + 1)
+    }
+    
+    $>dom_update("#memory_board", $html)
+}
+
+// Moteur de rendu d'une carte (Gère la couleur et le dessin)
+$>def RenderCard(idx) {
+    $>var s = $>get($M_STATE, $idx)
+    $>var sel = "#card_" + $idx
+    $>var face = $>get($M_CARDS, $idx)
+    
+    // Carte Cachée
+    $>if($s == 0) {
+        $>dom_style($sel, "backgroundColor", "#0f3460")
+        $>dom_style($sel, "borderColor", "#222")
+        $>dom_update($sel, "❓")
+    }
+    // Carte Retournée (En cours)
+    $>if($s == 1) {
+        $>dom_style($sel, "backgroundColor", "#fff")
+        $>dom_style($sel, "borderColor", "#fff")
+        $>dom_update($sel, $face)
+    }
+    // Carte Trouvée (Validée)
+    $>if($s == 2) {
+        $>dom_style($sel, "backgroundColor", "#00e676")
+        $>dom_style($sel, "borderColor", "#00e676")
+        $>dom_update($sel, $face)
+    }
+}
+
+// Gestion des Clics et des Règles (Le Cœur du Jeu)
+$>def ClickCard(idx) {
+    // Si le plateau n'est pas bloqué
+    $>if($M_LOCK == "non") {
+        
+        $>var etat = $>get($M_STATE, $idx)
+        
+        // Si la carte est bien cachée (On ne peut pas cliquer une carte déjà retournée)
+        $>if($etat == 0) {
+            
+            // On la retourne
+            $>var _ = $>set($M_STATE, $idx, 1)
+            $>RenderCard($idx)
+            
+            // Est-ce la PREMIÈRE carte qu'on retourne ?
+            $>if($M_FLIPPED_1 == -1) {
+                $>var M_FLIPPED_1 = $idx
+            } $>else {
+                // C'est la DEUXIÈME carte ! On bloque le plateau.
+                $>var M_FLIPPED_2 = $idx
+                $>var M_LOCK = "oui"
+                
+                $>var face1 = $>get($M_CARDS, $M_FLIPPED_1)
+                $>var face2 = $>get($M_CARDS, $M_FLIPPED_2)
+                
+                // ANALYSE DE LA PAIRE
+                $>if($face1 == $face2) {
+                    
+                    // GAGNÉ ! Les cartes restent affichées en vert
+                    $>var _ = $>set($M_STATE, $M_FLIPPED_1, 2)
+                    $>var _ = $>set($M_STATE, $M_FLIPPED_2, 2)
+                    $>RenderCard($M_FLIPPED_1)
+                    $>RenderCard($M_FLIPPED_2)
+                    
+                    $>var M_SCORE = $>math($M_SCORE + 1)
+                    $>dom_update("#score_val", $M_SCORE)
+                    
+                    // Déblocage
+                    $>var M_FLIPPED_1 = -1
+                    $>var M_FLIPPED_2 = -1
+                    $>var M_LOCK = "non"
+                    
+                    // Condition de Victoire
+                    $>if($M_SCORE == 8) {
+                        $>dom_update("#score_val", "VICTOIRE ! 🎉")
+                    }
+                    
+                } $>else {
+                    
+                    // PERDU ! C'est ici que TenyScript est Magique :
+                    // On fait une simple pause de 800 millisecondes...
+                    $>wait(800)
+                    
+                    // ... et on cache à nouveau les cartes (Sans bloquer la page !)
+                    $>var _ = $>set($M_STATE, $M_FLIPPED_1, 0)
+                    $>var _ = $>set($M_STATE, $M_FLIPPED_2, 0)
+                    $>RenderCard($M_FLIPPED_1)
+                    $>RenderCard($M_FLIPPED_2)
+                    
+                    // Déblocage
+                    $>var M_FLIPPED_1 = -1
+                    $>var M_FLIPPED_2 = -1
+                    $>var M_LOCK = "non"
+                }
+            }
+        }
+    }
+}
+
+
+// ---------------------------------------------------------
+// 3. STRUCTURE HTML GLOBALE
+// ---------------------------------------------------------
+$>div("class='memory-console'", {
+    
+    $>div("class='header'", {
+        <span>TENY-MEMORY</span>
+        <span style='color:#e94560;'>SCORE: <span id='score_val'>0</span>/8</span>
+    })
+    
+    // Le conteneur vide. La grille sera injectée dedans.
+    $>div("id='memory_board' class='memory-board'", {})
+    
+    $>button("class='btn-replay' onclick='window.TenyGlobalRegistry.InitGame()'", { 
+        REJOUER UNE PARTIE 
+    })
+})
+
+// Démarrage de la première partie
+$>InitGame()

@@ -1,13 +1,12 @@
 $>titre(⚡ PROTOCOLE OMEGA : ULTIMATE STRESS TEST ⚡)
 
 $>print("Initialisation des systèmes...", "gray")
-$>call(stdLib.wait, 500)
+$>wait(500)
 
-$>space(10)
 $>titre(1. TEST MATRICIEL : GÉNÉRATION DE CARTE)
 $>print("Création d'un univers 10x10...", "blue")
 
-$>comment(On utilise var _ pour cacher la sortie console de la création)
+/*On utilise var _ pour cacher la sortie console de la création)*/
 $>var = map = $>call(stdLib.matrix_new, 10, 10, "⬛")
 
 $>print("Injection des entités (Silence radio)...")

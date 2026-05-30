@@ -21,7 +21,7 @@ $>repeat(1000) {
     $>var total = $>math($total + $x)
 }
 
-$>print("✅ CPU Test fini. Résultat : " + $total, "lime")
+$>print("✅ CPU Test fini. Résultat : $total", "lime")
 $>espace(10)
 
 // ------------------------------------------------------------
@@ -37,7 +37,7 @@ $>var tour = 0
 $>repeat(13) {
     $>var chaine = $chaine + $chaine
     $>var tour = $>math($tour + 1)
-    $>print("  -> Tour " + $tour + " : taille " + $>len($chaine))
+    $>print("  -> Tour $tour + : taille ${ $>len($chaine) }")
 }
 
 $>print("✅ Mémoire OK. Chaîne finale générée.", "lime")
@@ -52,7 +52,7 @@ $>wait(1000)
 // Affiche 500 lignes rapidement pour voir si le scroll tient
 $>var k = 0
 $>repeat(500) {
-    $>print("Log système rapide ligne n°" + $k, "#333")
+    $>print("Log système rapide ligne n° $k", "#333")
     $>var k = $>math($k + 1)
 }
 

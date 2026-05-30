@@ -1,0 +1,85 @@
+// =====================================================================
+// 🔐 CYBER-PASS : GÉNÉRATEUR MATRICIEL (100% NATIF & STABLE)
+// =====================================================================
+
+$>css_style() {
+    .cyber-box { background: #15151e; border: 2px solid #00ffcc; border-radius: 8px; padding: 30px; width: 100%; max-width: 450px; box-shadow: 0 0 30px rgba(0, 255, 204, 0.15); box-sizing: border-box; }
+    .screen { background: #050508; padding: 20px; border: 1px solid #333; text-align: center; font-size: 2.2em; letter-spacing: 4px; margin-bottom: 20px; text-shadow: 0 0 10px #00ffcc; min-height: 45px; word-break: break-all; border-radius: 4px; }
+    .btn-hack { background: transparent; border: 2px solid #00ffcc; color: #00ffcc; padding: 15px 20px; font-size: 1.2em; cursor: pointer; transition: 0.3s; font-family: inherit; font-weight: bold; width: 100%; border-radius: 4px; text-transform: uppercase; }
+    .btn-hack:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; }
+    .log-area { margin-top: 20px; font-size: 0.85em; color: #555; border-top: 1px solid #333; padding-top: 15px; }
+    .log-entry { margin: 4px 0; }
+    .color-red { color: #ff0055; text-shadow: 0 0 5px #ff0055; }
+    .color-green { color: #00ffcc; }
+}
+
+// 1. Base de données native (Tableau de caractères)
+$>var CHARS = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","0","1","2","3","4","5","6","7","8","9","!","@","#","$","%","&","*"]
+
+// 2. Moteur d'Animation et de Génération
+$>def GenererMotDePasse() {
+    // A. Changement d'état visuel (DOM Update ciblé)
+    $>dom_update("#screen_pwd", "<span class='color-red'>HACKING...</span>")
+    $>dom_update("#sys_status", "[SYSTEM] Brute-force en cours...")
+    
+    $>var length = 12
+    
+    // B. Animation Matrix (Boucle de suspense native !)
+    // On génère 10 faux mots de passe très rapidement pour créer une animation
+    $>var frames = 0
+    $>while($frames < 10) {
+        $>var temp_pass = ""
+        $>var k = 0
+        $>while($k < $length) {
+            $>var r = $>random(0, 68) // 68 est la taille du tableau CHARS
+            $>var char = $>get($CHARS, $r)
+            $>var temp_pass = "$temp_pass$char"
+            $>var k = $>math($k + 1)
+        }
+        
+        // Affichage de la frame
+        $>dom_update("#screen_pwd", "<span class='color-red'>$temp_pass</span>")
+        $>wait(50) // Pause de 50ms (crée l'effet visuel fluide sans bloquer le moteur)
+        
+        $>var frames = $>math($frames + 1)
+    }
+
+    // C. Génération finale du vrai mot de passe
+    $>var final_pass = ""
+    $>var j = 0
+    $>while($j < $length) {
+        $>var r = $>random(0, 68)
+        $>var char = $>get($CHARS, $r)
+        $>var final_pass = "$final_pass$char"
+        $>var j = $>math($j + 1)
+    }
+    
+    // D. Affichage du résultat final
+    $>dom_update("#screen_pwd", "<span class='color-green'>$final_pass</span>")
+    $>dom_update("#sys_status", "<span class='color-green'>[OK] Clé décryptée avec succès.</span>")
+}
+
+// ---------------------------------------------------------
+// 3. Interface Graphique (Rendu direct)
+// ---------------------------------------------------------
+$>div("class='cyber-box'", {
+    
+    $>div("style='text-align:center; font-weight:bold; margin-bottom:20px; font-size:1.2em; border-bottom:1px solid #333; padding-bottom:10px;'", { 
+        "CYBER-KEY GENERATOR v2.0" 
+    })
+    
+    // L'écran d'affichage
+    $>div("id='screen_pwd' class='screen'", { 
+        "STANDBY" 
+    })
+    
+    // Le bouton déclencheur (Appelle la fonction TenyScript proprement)
+    $>button("class='btn-hack' onclick='window.TenyGlobalRegistry.GenererMotDePasse()'", { 
+        "DÉMARRER LE DÉCRYPTAGE" 
+    })
+    
+    // Console de logs
+    $>div("class='log-area'", { 
+        "<div id='sys_status' class='log-entry'>[SYSTEM] En attente d'une requête...</div>" 
+    })
+})

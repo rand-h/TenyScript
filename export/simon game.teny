@@ -1,0 +1,210 @@
+// =====================================================================
+// 🎵 TENY-SIMON : JEU DE MÉMOIRE AUDIO-VISUEL (ASYNC ENGINE)
+// =====================================================================
+
+$>css_style() {
+    .simon-machine { background: #222233; padding: 30px; border-radius: 50%; border: 15px solid #111; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5); width: 450px; height: 450px; position: relative; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
+    
+    .pads-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; height: 100%; transform: rotate(45deg); }
+    
+    .pad { border-radius: 20px; cursor: pointer; opacity: 0.4; transition: opacity 0.1s, transform 0.1s; border: 4px solid rgba(0,0,0,0.5); }
+    .pad:active { transform: scale(0.95); }
+    
+    .pad-0 { background: #ff0055; box-shadow: inset 0 0 20px rgba(255,0,85,0.5); } /* Rouge */
+    .pad-1 { background: #00e676; box-shadow: inset 0 0 20px rgba(0,230,118,0.5); } /* Vert */
+    .pad-2 { background: #ffcc00; box-shadow: inset 0 0 20px rgba(255,204,0,0.5); } /* Jaune */
+    .pad-3 { background: #0088ff; box-shadow: inset 0 0 20px rgba(0,136,255,0.5); } /* Bleu */
+    
+    .center-console { position: absolute; width: 180px; height: 180px; background: #ececec; border-radius: 50%; border: 10px solid #111; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-45deg); z-index: 10; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    
+    .logo { color: #111; font-weight: 900; font-size: 1.8em; letter-spacing: 2px; margin-bottom: 5px; }
+    .score { background: #222; color: #ff0055; font-family: 'Courier New', monospace; font-size: 2em; padding: 5px 15px; border-radius: 5px; border: inset 2px #000; margin-bottom: 10px; font-weight: bold; }
+    .msg { color: #555; font-size: 0.8em; font-weight: bold; text-align: center; height: 20px; }
+    
+    .btn-play { background: #111; color: #fff; border: 2px solid #555; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-play:hover { background: #333; color: #00ffcc; border-color: #00ffcc; }
+}
+
+// ---------------------------------------------------------
+// 1. SYNTHÉTISEUR AUDIO (JavaScript AudioContext)
+// ---------------------------------------------------------
+$>js_script() {
+    window.SimonAudio = new (window.AudioContext || window.webkitAudioContext)();
+    
+    window.PlayBeep = function(padId, duration) {
+        if (window.SimonAudio.state === 'suspended') window.SimonAudio.resume();
+        const osc = window.SimonAudio.createOscillator();
+        const gain = window.SimonAudio.createGain();
+        osc.connect(gain);
+        gain.connect(window.SimonAudio.destination);
+        
+        // Fréquences classiques du Simon (E4, C#4, A4, E3)
+        const freqs = [329.63, 277.18, 440.00, 164.81]; 
+        osc.frequency.value = freqs[padId];
+        osc.type = 'square'; // Son très rétro !
+        
+        osc.start();
+        // Disparition en douceur pour éviter les clics audio
+        gain.gain.setValueAtTime(0.5, window.SimonAudio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, window.SimonAudio.currentTime + (duration/1000));
+        
+        setTimeout(() => osc.stop(), duration);
+        return "";
+    };
+    
+    window.PlayError = function() {
+        if (window.SimonAudio.state === 'suspended') window.SimonAudio.resume();
+        const osc = window.SimonAudio.createOscillator();
+        const gain = window.SimonAudio.createGain();
+        osc.connect(gain); gain.connect(window.SimonAudio.destination);
+        osc.frequency.value = 100; // Buzz grave
+        osc.type = 'sawtooth';
+        osc.start();
+        gain.gain.setValueAtTime(0.5, window.SimonAudio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, window.SimonAudio.currentTime + 0.8);
+        setTimeout(() => osc.stop(), 800);
+        return "";
+    };
+    return "";
+}
+
+// ---------------------------------------------------------
+// 2. REGISTRES GLOBAUX TENYSCRIPT
+// ---------------------------------------------------------
+$>var SIMON_SEQ = []
+$>var SIMON_STEP = 0
+// Etats : idle, playing, waiting, gameover
+$>var SIMON_STATE = "idle" 
+$>var SIMON_SCORE = 0
+
+// ---------------------------------------------------------
+// 3. LOGIQUE ASYNCHRONE DU JEU (TenyScript)
+// ---------------------------------------------------------
+
+// Allume un pad, joue la note, et l'éteint (La beauté de TenyScript async)
+$>def LightPad(id, duree) {
+    // 1. Allume le CSS et joue le son
+    $>js_script() {
+        let p = document.getElementById("pad_" + $id);
+        if(p) { p.style.opacity = "1"; p.style.boxShadow = "0 0 40px " + window.getComputedStyle(p).backgroundColor; }
+        window.PlayBeep($id, $duree);
+        return "";
+    }
+    
+    // 2. Pause TenyScript
+    $>wait($duree)
+    
+    // 3. Eteint le CSS
+    $>js_script() {
+        let p = document.getElementById("pad_" + $id);
+        if(p) { p.style.opacity = "0.4"; p.style.boxShadow = "none"; }
+        return "";
+    }
+    
+    // 4. Petite pause avant la prochaine note
+    $>wait(100)
+}
+
+// Fait jouer la séquence mémorisée par la machine
+$>def PlaySequence() {
+    $>var SIMON_STATE = "playing"
+    $>dom_update("#sys_msg", "ÉCOUTEZ...")
+    $>wait(800)
+    
+    $>var i = 0
+    $>var max = $>len($SIMON_SEQ)
+    
+    // Boucle temporelle !
+    $>while($i < $max) {
+        $>var pad_cible = $>get($SIMON_SEQ, $i)
+        
+        // Plus on avance, plus la machine joue vite !
+        $>var vitesse = $>math(600 - ($max * 25))
+        $>if($vitesse < 200) { $>var vitesse = 200 }
+        
+        // Appel de la macro synchrone
+        $>LightPad($pad_cible, $vitesse)
+        
+        $>var i = $>math($i + 1)
+    }
+    
+    // Rendre la main au joueur
+    $>var SIMON_STEP = 0
+    $>var SIMON_STATE = "waiting"
+    $>dom_update("#sys_msg", "À VOUS !")
+}
+
+// Ajoute une nouvelle note et lance le tour
+$>def NextRound() {
+    $>var nouv_note = $>random(0, 3)
+    $>push($SIMON_SEQ, $nouv_note)
+    
+    $>var val_score = $>math($>len($SIMON_SEQ) - 1)
+    $>dom_update("#score_val", $val_score)
+    
+    $>PlaySequence()
+}
+
+// Initialise la partie
+$>def StartGame() {
+    $>var SIMON_SEQ = []
+    $>var SIMON_SCORE = 0
+    $>dom_update("#score_val", "0")
+    $>dom_update("#sys_msg", "PRÉPARATION...")
+    $>NextRound()
+}
+
+// Événement déclenché quand le joueur clique sur une couleur
+$>def ClickPad(id) {
+    $>if($SIMON_STATE == "waiting") {
+        
+        // On allume le pad que le joueur vient de cliquer
+        $>LightPad($id, 250)
+        
+        // Vérification de la mémoire
+        $>var note_attendue = $>get($SIMON_SEQ, $SIMON_STEP)
+        
+        $>if($id == $note_attendue) {
+            // BONNE RÉPONSE
+            $>var SIMON_STEP = $>math($SIMON_STEP + 1)
+            $>var max = $>len($SIMON_SEQ)
+            
+            // A-t-il fini la séquence ?
+            $>if($SIMON_STEP == $max) {
+                $>var SIMON_STATE = "success"
+                $>dom_update("#sys_msg", "PARFAIT !")
+                $>wait(1000)
+                $>NextRound()
+            }
+            
+        } $>else {
+            // MAUVAISE RÉPONSE
+            $>var SIMON_STATE = "gameover"
+            $>js_script() { window.PlayError(); return ""; }
+            $>dom_update("#sys_msg", "GAME OVER")
+        }
+    }
+}
+
+
+// ---------------------------------------------------------
+// 4. STRUCTURE HTML
+// ---------------------------------------------------------
+$>div("class='simon-machine'", {
+    
+    // Le bloc central de la console
+    $>div("class='center-console'", {
+        $>div("class='logo'", { SIMON })
+        $>div("id='score_val' class='score'", { 0 })
+        $>div("id='sys_msg' class='msg'", { PRÊT })
+        $>button("class='btn-play' onclick='window.TenyGlobalRegistry.StartGame()'", { JOUER })
+    })
+    
+    // La grille des 4 boutons
+    $>div("class='pads-container'", {
+        $>div("id='pad_0' class='pad pad-0' onclick='window.TenyGlobalRegistry.ClickPad(0)'", {})
+        $>div("id='pad_1' class='pad pad-1' onclick='window.TenyGlobalRegistry.ClickPad(1)'", {})
+        $>div("id='pad_2' class='pad pad-2' onclick='window.TenyGlobalRegistry.ClickPad(2)'", {})
+        $>div("id='pad_3' class='pad pad-3' onclick='window.TenyGlobalRegistry.ClickPad(3)'", {})
+    })
+})

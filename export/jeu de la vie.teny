@@ -1,0 +1,188 @@
+// =====================================================================
+// 🧬 TENY-LIFE : L'USINE INFINIE (ARCHITECTURE HYBRIDE SÉCURISÉE)
+// =====================================================================
+
+$>css_style() {
+    .lab-console { background: #151515; padding: 20px; border-radius: 8px; border: 2px solid #333; box-shadow: 0 5px 25px rgba(0,255,200,0.1); width: 100%; max-width: 800px; box-sizing: border-box; }
+    .header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: #00ffcc; text-align: center; letter-spacing: 2px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(38, 1fr); width: 100%; aspect-ratio: 38/15; background: #000; border: 1px solid #444; border-radius: 4px; overflow: hidden; margin-bottom: 15px; }
+    .cell { box-sizing: border-box; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+    .cell:hover { background: rgba(0,255,204,0.3); }
+    
+    /* Les classes ultra-rapides */
+    .alive { background-color: #00ffcc; box-shadow: 0 0 5px #00ffcc; border-color: #00ffcc; }
+    .dead { background-color: #000; }
+    
+    .btn-group { display: flex; gap: 10px; }
+    .btn { flex: 1; padding: 12px; background: #222; color: #fff; border: 1px solid #00ffcc; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.2s; font-family: inherit; }
+    .btn:hover { background: #00ffcc; color: #000; }
+    .btn-stop { border-color: #ff0055; color: #ff0055; }
+    .btn-stop:hover { background: #ff0055; color: #fff; }
+}
+
+// ---------------------------------------------------------
+// 1. MOTEUR JS & RENDU MASSIF
+// ---------------------------------------------------------
+$>js_script() {
+    window.LifeEngine = {
+        width: 38,
+        height: 15,
+        total: 570,
+        grid: [],
+        running: false,
+        generation: 0,
+        // Un préfixe unique pour éviter tout conflit si tu relances le script
+        prefix: 'c_' + Math.floor(Math.random() * 10000) + '_',
+        
+        initGosper: function() {
+            this.grid = new Array(this.total).fill(0);
+            
+            const coords = [
+                [1, 5], [2, 5], [1, 6], [2, 6], // Bloc gauche
+                [11, 5], [11, 6], [11, 7], [12, 4], [12, 8], [13, 3], [14, 3], [13, 9], [14, 9], [15, 6], [16, 4], [16, 8], [17, 5], [17, 6], [17, 7], [18, 6], // Canon 1
+                [21, 3], [21, 4], [21, 5], [22, 3], [22, 4], [22, 5], [23, 2], [23, 6], [25, 1], [25, 2], [25, 6], [25, 7], // Canon 2
+                [35, 3], [36, 3], [35, 4], [36, 4] // Bloc droit
+            ];
+            
+            for(let c of coords) {
+                let idx = (c[1] * this.width) + c[0];
+                this.grid[idx] = 1;
+            }
+            this.generation = 0;
+            this.renderAll();
+        },
+        
+        // Injection directe et propre dans le conteneur cible
+        renderAll: function() {
+            let html = '';
+            for(let i=0; i<this.total; i++) {
+                let cls = this.grid[i] ? 'alive' : 'dead';
+                html += '<div id="' + this.prefix + i + '" class="cell ' + cls + '" onclick="window.LifeEngine.toggle(' + i + ')"></div>';
+            }
+            let board = document.getElementById("game_board");
+            if(board) board.innerHTML = html;
+        },
+        
+        toggle: function(i) {
+            if(!this.running) {
+                this.grid[i] = this.grid[i] ? 0 : 1;
+                let el = document.getElementById(this.prefix + i);
+                if(el) el.className = this.grid[i] ? "cell alive" : "cell dead";
+            }
+        },
+        
+        // Le calcul à haute vitesse
+        compute: function() {
+            if(!this.running) return;
+            let next = new Array(this.total).fill(0);
+            
+            for(let i=0; i<this.total; i++) {
+                let x = i % this.width, y = Math.floor(i / this.width);
+                let neighbors = 0;
+                
+                for(let dy=-1; dy<=1; dy++) {
+                    for(let dx=-1; dx<=1; dx++) {
+                        if(dx===0 && dy===0) continue;
+                        let nx = x + dx, ny = y + dy;
+                        if(nx>=0 && nx<this.width && ny>=0 && ny<this.height) {
+                            neighbors += this.grid[ny*this.width + nx];
+                        }
+                    }
+                }
+                
+                let state = this.grid[i];
+                if(state === 1 && (neighbors === 2 || neighbors === 3)) next[i] = 1;
+                else if(state === 0 && neighbors === 3) next[i] = 1;
+                
+                // DOM-Diffing instantané
+                if(next[i] !== state) {
+                    let el = document.getElementById(this.prefix + i);
+                    if(el) el.className = next[i] ? "cell alive" : "cell dead";
+                }
+            }
+            
+            this.grid = next;
+            this.generation++;
+            let countEl = document.getElementById("gen_count");
+            if(countEl) countEl.innerText = this.generation;
+        },
+        
+        clear: function() {
+            this.running = false;
+            this.grid = new Array(this.total).fill(0);
+            this.generation = 0;
+            for(let i=0; i<this.total; i++) {
+                let el = document.getElementById(this.prefix + i);
+                if(el) el.className = "cell dead";
+            }
+            let countEl = document.getElementById("gen_count");
+            if(countEl) countEl.innerText = "0";
+        }
+    };
+    return "";
+}
+
+// ---------------------------------------------------------
+// 2. ORCHESTRATEUR TENYSCRIPT
+// ---------------------------------------------------------
+
+$>def Play() {
+    $>js_script() { window.LifeEngine.running = true; return ""; }
+    $>dom_update("#status_text", "ÉVOLUTION EN COURS...")
+}
+
+$>def Pause() {
+    $>js_script() { window.LifeEngine.running = false; return ""; }
+    $>dom_update("#status_text", "MODE DESSIN (PAUSE)")
+}
+
+$>def Clear() {
+    $>js_script() { window.LifeEngine.clear(); return ""; }
+    $>dom_update("#status_text", "MODE DESSIN (PAUSE)")
+}
+
+// ---------------------------------------------------------
+// 3. AFFICHAGE HTML & INITIALISATION
+// ---------------------------------------------------------
+
+$>div("class='lab-console'", {
+    $>div("class='header'", { 
+        L'USINE INFINIE DE GOSPER 
+    })
+    
+    $>div("style='display:flex; justify-content:space-between; margin-bottom:10px; color:#888; font-size:0.9em;'", {
+        <span id='status_text'>MODE DESSIN (PAUSE)</span>
+        <span>GÉNÉRATION : <span id='gen_count' style='color:#00ffcc; font-weight:bold;'>0</span></span>
+    })
+    
+    // Conteneur vide. Le JS va y injecter la grille proprement.
+    $>div("id='game_board' class='grid'", {})
+    
+    $>div("class='btn-group'", {
+        $>button("class='btn' onclick='window.TenyGlobalRegistry.Play()'", { LANCER })
+        $>button("class='btn btn-stop' onclick='window.TenyGlobalRegistry.Pause()'", { PAUSE })
+        $>button("class='btn' onclick='window.TenyGlobalRegistry.Clear()'", { EFFACER })
+    })
+})
+
+// L'Horloge Master (Démarre dès que le conteneur game_board est prêt)
+$>js_script() {
+    window.lifeInterval = null;
+    window.StartLifeTick = function() {
+        if(window.lifeInterval) clearInterval(window.lifeInterval);
+        window.lifeInterval = setInterval(() => {
+            window.LifeEngine.compute();
+        }, 80); // 80 millisecondes (Ultra fluide)
+    };
+
+    let checkExist = setInterval(() => {
+        if (document.getElementById('game_board')) {
+            clearInterval(checkExist);
+            window.LifeEngine.initGosper();
+            window.StartLifeTick();
+        }
+    }, 50);
+
+    return "";
+}

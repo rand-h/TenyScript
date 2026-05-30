@@ -1,0 +1,723 @@
+// =====================================================================
+// ♟️ TENY-CHESS : PURE TENYSCRIPT EDITION (ULTRA-RAPIDE, SANS BUGS)
+// =====================================================================
+
+$>css_style() {
+    body { background: #302e2b; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    #teny_board { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 15px; }
+    .status-bar { width: 100%; padding: 12px 15px; background: #262421; border-radius: 5px; text-align: center; font-weight: bold; font-size: 18px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .board-container { width: 80vw; position: relative; padding-bottom: 100%; border-radius: 4px; overflow: hidden; border: 4px solid #262421; box-shadow: 0 5px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
+    .board { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); user-select: none; }
+    .square { display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .light { background-color: #ebecd0; }
+    .dark { background-color: #739552; }
+    .selected { background-color: rgba(20, 85, 30, 0.5) !important; }
+    .piece { font-size: 8vmin; z-index: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1; }
+    @media (min-width: 600px) { .piece { font-size: 50px; } }
+    .white { color: #fff; }
+    .black { color: #000; }
+    .hint::after { content: ''; position: absolute; width: 25%; height: 25%; background: rgba(0,0,0,0.25); border-radius: 50%; z-index: 2; pointer-events: none; }
+    .capture::after { content: ''; position: absolute; width: 85%; height: 85%; border: 6px solid rgba(0,0,0,0.25); border-radius: 50%; z-index: 2; pointer-events: none; }
+}
+
+// ---------------------------------------------------------
+// 💾 1. BASE DE DONNÉES ET REGISTRES GLOBAUX
+// ---------------------------------------------------------
+$>var GLOBAL_COUP_LEGAL = "non"
+$>var GLOBAL_MENACE_VALIDE = "non"
+$>var GLOBAL_ROI_DANGER = "non"
+$>var GLOBAL_FIN_PARTIE = "non"
+$>var STRICT_LEGAL = "non"
+
+$>var json_db = '[{"c":"black","t":"r","s":"♜"},{"c":"black","t":"n","s":"♞"},{"c":"black","t":"b","s":"♝"},{"c":"black","t":"q","s":"♛"},{"c":"black","t":"k","s":"♚"},{"c":"black","t":"b","s":"♝"},{"c":"black","t":"n","s":"♞"},{"c":"black","t":"r","s":"♜"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},{"c":"black","t":"p","s":"♟"},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"p","s":"♙"},{"c":"white","t":"r","s":"♖"},{"c":"white","t":"n","s":"♘"},{"c":"white","t":"b","s":"♗"},{"c":"white","t":"q","s":"♕"},{"c":"white","t":"k","s":"♔"},{"c":"white","t":"b","s":"♗"},{"c":"white","t":"n","s":"♘"},{"c":"white","t":"r","s":"♖"}]'
+$>var Plateau = $>json_parse($json_db)
+
+// ---------------------------------------------------------
+// 🧠 2. MACROS DU MOTEUR SPATIAL
+// ---------------------------------------------------------
+
+$>def ValiderCoup(cFrom, cTo, cTour) {
+    $>var GLOBAL_COUP_LEGAL = "non"
+    $>var cPiece = $>get($Plateau, $cFrom)
+    $>var cCible = $>get($Plateau, $cTo)
+    
+    $>if($cPiece != null) {
+        $>var cpCol = $>get($cPiece, "c")
+        $>if($cpCol == $cTour) {
+            
+            $>var cTirAmi = "non"
+            $>if($cCible != null) {
+                $>var ccCol = $>get($cCible, "c")
+                $>if($ccCol == $cTour) {
+                    $>var cTirAmi = "oui"
+                }
+            }
+            
+            $>if($cTirAmi == "non") {
+                $>var c_sY = $>math(FLOOR($cFrom / 8))
+                $>var c_sX = $>math($cFrom - ($c_sY * 8))
+                $>var c_eY = $>math(FLOOR($cTo / 8))
+                $>var c_eX = $>math($cTo - ($c_eY * 8))
+                
+                $>var c_dx = $>math($c_eX - $c_sX)
+                $>var c_dy = $>math($c_eY - $c_sY)
+                
+                $>var c_adx = $c_dx
+                $>if($c_dx < 0) {
+                    $>var c_adx = $>math(0 - $c_dx)
+                }
+                
+                $>var c_ady = $c_dy
+                $>if($c_dy < 0) {
+                    $>var c_ady = $>math(0 - $c_dy)
+                }
+                
+                $>var c_isSt = "non"
+                $>if($c_sX == $c_eX) {
+                    $>var c_isSt = "oui"
+                }
+                $>if($c_sY == $c_eY) {
+                    $>var c_isSt = "oui"
+                }
+                
+                $>var c_isDg = "non"
+                $>if($c_adx == $c_ady) {
+                    $>var c_isDg = "oui"
+                }
+                
+                $>var c_chLibre = "oui"
+                $>var c_chPath = "non"
+                $>if($c_isSt == "oui") {
+                    $>var c_chPath = "oui"
+                }
+                $>if($c_isDg == "oui") {
+                    $>var c_chPath = "oui"
+                }
+                
+                $>if($c_chPath == "oui") {
+                    $>var c_stX = 0
+                    $>if($c_eX > $c_sX) {
+                        $>var c_stX = 1
+                    }
+                    $>if($c_eX < $c_sX) {
+                        $>var c_stX = -1
+                    }
+                    
+                    $>var c_stY = 0
+                    $>if($c_eY > $c_sY) {
+                        $>var c_stY = 1
+                    }
+                    $>if($c_eY < $c_sY) {
+                        $>var c_stY = -1
+                    }
+                    
+                    $>var c_cX = $>math($c_sX + $c_stX)
+                    $>var c_cY = $>math($c_sY + $c_stY)
+                    
+                    $>var c_sLoop = 0
+                    $>var c_keep = "oui"
+                    $>while($c_keep == "oui") {
+                        $>if($c_cX == $c_eX) {
+                            $>if($c_cY == $c_eY) {
+                                $>var c_keep = "non"
+                            }
+                        }
+                        $>if($c_keep == "oui") {
+                            $>var c_chkIdx = $>math(($c_cY * 8) + $c_cX)
+                            $>var c_obs = $>get($Plateau, $c_chkIdx)
+                            $>if($c_obs != null) { 
+                                $>var c_chLibre = "non"
+                                $>var c_keep = "non"
+                            }
+                            $>var c_cX = $>math($c_cX + $c_stX)
+                            $>var c_cY = $>math($c_cY + $c_stY)
+                            $>var c_sLoop = $>math($c_sLoop + 1)
+                            $>if($c_sLoop > 10) {
+                                $>var c_keep = "non"
+                            }
+                        }
+                    }
+                } $>else {
+                    $>var c_chLibre = "non"
+                }
+
+                $>var c_pTyp = $>get($cPiece, "t")
+                
+                $>if($c_pTyp == "k") {
+                    $>if($c_adx <= 1) {
+                        $>if($c_ady <= 1) {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }
+                }
+                $>if($c_pTyp == "r") {
+                    $>if($c_isSt == "oui") {
+                        $>if($c_chLibre == "oui") {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }
+                }
+                $>if($c_pTyp == "b") {
+                    $>if($c_isDg == "oui") {
+                        $>if($c_chLibre == "oui") {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }
+                }
+                $>if($c_pTyp == "q") {
+                    $>var c_qDir = "non"
+                    $>if($c_isSt == "oui") {
+                        $>var c_qDir = "oui"
+                    }
+                    $>if($c_isDg == "oui") {
+                        $>var c_qDir = "oui"
+                    }
+                    $>if($c_qDir == "oui") {
+                        $>if($c_chLibre == "oui") {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }         }
+                $>if($c_pTyp == "n") {
+                    $>if($c_adx == 2) {
+                        $>if($c_ady == 1) {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }
+                    $>if($c_adx == 1) {
+                        $>if($c_ady == 2) {
+                            $>var GLOBAL_COUP_LEGAL = "oui"
+                        }
+                    }
+                }
+                $>if($c_pTyp == "p") {
+                    $>var c_dir = 1
+                    $>var c_lDep = 1
+                    $>if($cTour == "white") { 
+                        $>var c_dir = -1
+                        $>var c_lDep = 6
+                    }
+                    $>if($c_dx == 0) {
+                        $>if($c_dy == $c_dir) {
+                            $>if($cCible == null) {
+                                $>var GLOBAL_COUP_LEGAL = "oui"
+                            }
+                        }
+                        $>var c_dbDir = $>math($c_dir * 2)
+                        $>if($c_dy == $c_dbDir) {
+                            $>if($c_sY == $c_lDep) {
+                                $>if($cCible == null) {
+                                    $>var c_mid = $>math(($c_sY + $c_dir) * 8 + $c_sX)
+                                    $>var c_midObs = $>get($Plateau, $c_mid)
+                                    $>if($c_midObs == null) {
+                                        $>var GLOBAL_COUP_LEGAL = "oui"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    $>if($c_adx == 1) {
+                        $>if($c_dy == $c_dir) {
+                            $>if($cCible != null) {
+                                $>var GLOBAL_COUP_LEGAL = "oui"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+$>def ValiderMenace(mFrom, mTo) {
+    $>var GLOBAL_MENACE_VALIDE = "non"
+    $>var mPiece = $>get($Plateau, $mFrom)
+    
+    $>var m_sY = $>math(FLOOR($mFrom / 8))
+    $>var m_sX = $>math($mFrom - ($m_sY * 8))
+    $>var m_eY = $>math(FLOOR($mTo / 8))
+    $>var m_eX = $>math($mTo - ($m_eY * 8))
+    
+    $>var m_dx = $>math($m_eX - $m_sX)
+    $>var m_dy = $>math($m_eY - $m_sY)
+    
+    $>var m_adx = $m_dx
+    $>if($m_dx < 0) {
+        $>var m_adx = $>math(0 - $m_dx)
+    }
+    
+    $>var m_ady = $m_dy
+    $>if($m_dy < 0) {
+        $>var m_ady = $>math(0 - $m_dy)
+    }
+    
+    $>var m_isSt = "non"
+    $>if($m_sX == $m_eX) {
+        $>var m_isSt = "oui"
+    }
+    $>if($m_sY == $m_eY) {
+        $>var m_isSt = "oui"
+    }
+    
+    $>var m_isDg = "non"
+    $>if($m_adx == $m_ady) {
+        $>var m_isDg = "oui"
+    }
+    
+    $>var m_chLibre = "oui"
+    $>var m_chPath = "non"
+    $>if($m_isSt == "oui") {
+        $>var m_chPath = "oui"
+    }
+    $>if($m_isDg == "oui") {
+        $>var m_chPath = "oui"
+    }
+    
+    $>if($m_chPath == "oui") {
+        $>var m_stX = 0
+        $>if($m_eX > $m_sX) {
+            $>var m_stX = 1
+        }
+        $>if($m_eX < $m_sX) {
+            $>var m_stX = -1
+        }
+        
+        $>var m_stY = 0
+        $>if($m_eY > $m_sY) {
+            $>var m_stY = 1
+        }
+        $>if($m_eY < $m_sY) {
+            $>var m_stY = -1
+        }
+        
+        $>var m_cX = $>math($m_sX + $m_stX)
+        $>var m_cY = $>math($m_sY + $m_stY)
+        
+        $>var m_sLoop = 0
+        $>var m_keep = "oui"
+        $>while($m_keep == "oui") {
+            $>if($m_cX == $m_eX) {
+                $>if($m_cY == $m_eY) {
+                    $>var m_keep = "non"
+                }
+            }
+            $>if($m_keep == "oui") {
+                $>var m_chkIdx = $>math(($m_cY * 8) + $m_cX)
+                $>var m_obs = $>get($Plateau, $m_chkIdx)
+                $>if($m_obs != null) {
+                    $>var m_chLibre = "non"
+                    $>var m_keep = "non"
+                }
+                $>var m_cX = $>math($m_cX + $m_stX)
+                $>var m_cY = $>math($m_cY + $m_stY)
+                $>var m_sLoop = $>math($m_sLoop + 1)
+                $>if($m_sLoop > 10) {
+                    $>var m_keep = "non"
+                }
+            }
+        }
+    } $>else {
+        $>var m_chLibre = "non"
+    }
+
+    $>var m_pTyp = $>get($mPiece, "t")
+    $>var m_pCol = $>get($mPiece, "c")
+    
+    $>if($m_pTyp == "k") {
+        $>if($m_adx <= 1) {
+            $>if($m_ady <= 1) {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+    $>if($m_pTyp == "r") {
+        $>if($m_isSt == "oui") {
+            $>if($m_chLibre == "oui") {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+    $>if($m_pTyp == "b") {
+        $>if($m_isDg == "oui") {
+            $>if($m_chLibre == "oui") {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+    $>if($m_pTyp == "q") {
+        $>var m_qDir = "non"
+        $>if($m_isSt == "oui") {
+            $>var m_qDir = "oui"
+        }
+        $>if($m_isDg == "oui") {
+            $>var m_qDir = "oui"
+        }
+        $>if($m_qDir == "oui") {
+            $>if($m_chLibre == "oui") {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+    $>if($m_pTyp == "n") {
+        $>if($m_adx == 2) {
+            $>if($m_ady == 1) {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+        $>if($m_adx == 1) {
+            $>if($m_ady == 2) {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+    $>if($m_pTyp == "p") {
+        $>var m_dir = 1
+        $>if($m_pCol == "white") {
+            $>var m_dir = -1
+        }
+        $>if($m_adx == 1) {
+            $>if($m_dy == $m_dir) {
+                $>var GLOBAL_MENACE_VALIDE = "oui"
+            }
+        }
+    }
+}
+
+$>def VerifierEchec(eRoiIdx, eColAttaquant) {
+    $>var GLOBAL_ROI_DANGER = "non"
+    $>var eLoop = 0
+    
+    // Sortie anticipée pour éviter le lag (Early Exit) !
+    $>while($eLoop < 64) {
+        $>if($GLOBAL_ROI_DANGER == "non") {
+            $>var ePiece = $>get($Plateau, $eLoop)
+            $>if($ePiece != null) {
+                $>var eCol = $>get($ePiece, "c")
+                $>if($eCol == $eColAttaquant) {
+                    $>ValiderMenace($eLoop, $eRoiIdx)
+                    $>if($GLOBAL_MENACE_VALIDE == "oui") {
+                        $>var GLOBAL_ROI_DANGER = "oui"
+                    }
+                }
+            }
+        }
+        $>var eLoop = $>math($eLoop + 1)
+    }
+}
+
+$>def VerifierCoupStrict(sFrom, sTo, sTour) {
+    $>var STRICT_LEGAL = "non"
+    $>ValiderCoup($sFrom, $sTo, $sTour)
+    
+    $>if($GLOBAL_COUP_LEGAL == "oui") {
+        $>var tpDep = $>get($Plateau, $sFrom)
+        $>var tpArr = $>get($Plateau, $sTo)
+        
+        // Simule en silence via la variable morte "_"
+        $>var _ = $>set($Plateau, $sTo, $tpDep)
+        $>var _ = $>set($Plateau, $sFrom, null)
+        
+        $>var trIdx = -1
+        $>var trS = 0
+        $>while($trS < 64) {
+            $>if($trIdx == -1) {
+                $>var trP = $>get($Plateau, $trS)
+                $>if($trP != null) {
+                    $>var trPt = $>get($trP, "t")
+                    $>if($trPt == "k") {
+                        $>var trPc = $>get($trP, "c")
+                        $>if($trPc == $sTour) {
+                            $>var trIdx = $trS
+                        }
+                    }
+                }
+            }
+            $>var trS = $>math($trS + 1)
+        }
+        
+        $>var tAdv = "black"
+        $>if($sTour == "black") {
+            $>var tAdv = "white"
+        }
+        $>VerifierEchec($trIdx, $tAdv)
+        
+        $>if($GLOBAL_ROI_DANGER == "non") {
+            $>var STRICT_LEGAL = "oui"
+        }
+        
+        // Annule en silence
+        $>var _ = $>set($Plateau, $sFrom, $tpDep)
+        $>var _ = $>set($Plateau, $sTo, $tpArr)
+    }
+}
+
+// L'Algorithme de Mat Ultra Rapide (Early Exit = pas de lag)
+$>def VerifierFinDePartie(fTour) {
+    $>var GLOBAL_FIN_PARTIE = "non"
+    $>var f_CoupSauveurTrouve = "non"
+    $>var f_from = 0
+    
+    $>while($f_from < 64) {
+        $>if($f_CoupSauveurTrouve == "non") {
+            $>var f_p = $>get($Plateau, $f_from)
+            $>if($f_p != null) {
+                $>var f_c = $>get($f_p, "c")
+                $>if($f_c == $fTour) {
+                    $>var f_to = 0
+                    $>while($f_to < 64) {
+                        $>if($f_CoupSauveurTrouve == "non") {
+                            $>VerifierCoupStrict($f_from, $f_to, $fTour)
+                            $>if($STRICT_LEGAL == "oui") {
+                                // Dès qu'un seul coup est possible, on stop TOUT !
+                                $>var f_CoupSauveurTrouve = "oui"
+                            }
+                        }
+                        $>var f_to = $>math($f_to + 1)
+                    }
+                }
+            }
+        }
+        $>var f_from = $>math($f_from + 1)
+    }
+    
+    $>if($f_CoupSauveurTrouve == "non") {
+        $>var f_roiIdx = -1
+        $>var f_rS = 0
+        $>while($f_rS < 64) {
+            $>if($f_roiIdx == -1) {
+                $>var f_rP = $>get($Plateau, $f_rS)
+                $>if($f_rP != null) {
+                    $>var f_rPt = $>get($f_rP, "t")
+                    $>if($f_rPt == "k") {
+                        $>var f_rPc = $>get($f_rP, "c")
+                        $>if($f_rPc == $fTour) {
+                            $>var f_roiIdx = $f_rS
+                        }
+                    }
+                }
+            }
+            $>var f_rS = $>math($f_rS + 1)
+        }
+        
+        $>var f_advCol = "black"
+        $>if($fTour == "black") {
+            $>var f_advCol = "white"
+        }
+        $>VerifierEchec($f_roiIdx, $f_advCol)
+        
+        $>if($GLOBAL_ROI_DANGER == "oui") {
+            $>var GLOBAL_FIN_PARTIE = "mat"
+        } $>else {
+            $>var GLOBAL_FIN_PARTIE = "pat"
+        }
+    }
+}
+
+// ---------------------------------------------------------
+// 🎮 3. CONTRÔLEUR D'ÉTAT
+// ---------------------------------------------------------
+$>class Partie() {
+    $>var this.tour = "white"
+    $>var this.selection = -1
+    $>var this.msg = "Trait aux Blancs"
+    $>var this.msgColor = "#fff"
+    $>var this.moves = ","
+
+    $>method clic(index) {
+        $>var idx = $>math(FLOOR($index))
+        
+        $>if($this.tour == "fin") {
+            $>var this.selection = -1
+            $>var this.msgColor = "#e74c3c"
+        } $>else {
+            $>if($this.selection == -1) {
+                $>var selPiece = $>get($Plateau, $idx)
+                $>if($selPiece != null) {
+                    $>var selCol = $>get($selPiece, "c")
+                    $>if($selCol == $this.tour) {
+                        $>var this.selection = $idx
+                        $>var this.msg = "Où voulez-vous aller ?"
+                        $>var this.msgColor = "#f1c40f"
+                        
+                        // Calcul des indicateurs (hints)
+                        $>var this.moves = ","
+                        $>var chkTo = 0
+                        $>while($chkTo < 64) {
+                            $>VerifierCoupStrict($idx, $chkTo, $this.tour)
+                            $>if($STRICT_LEGAL == "oui") {
+                                $>var this.moves = "$this.moves$chkTo,"
+                            }
+                            $>var chkTo = $>math($chkTo + 1)
+                        }
+                        
+                    } $>else {
+                        $>var this.msg = "Pièce ennemie."
+                        $>var this.msgColor = "#e74c3c"
+                    }
+                }
+            } $>else {
+                $>if($this.selection == $idx) {
+                    $>var this.selection = -1
+                    $>var this.moves = ","
+                    $>var this.msg = "Sélection annulée."
+                    $>var this.msgColor = "#fff"
+                } $>else {
+                    $>var targetStr = ",$idx,"
+                    $>var canMoveBool = $>contains($this.moves, $targetStr)
+                    
+                    $>if($canMoveBool == true) {
+                        // EXÉCUTION
+                        $>var pDepart = $>get($Plateau, $this.selection)
+                        $>var _ = $>set($Plateau, $idx, $pDepart)
+                        $>var _ = $>set($Plateau, $this.selection, null)
+                        
+                        // Promotion
+                        $>var pTypDepart = $>get($pDepart, "t")
+                        $>var pfy = $>math(FLOOR($idx / 8))
+                        $>if($pTypDepart == "p") {
+                            $>if($pfy == 0) {
+                                $>var nq = $>json_parse('{"c":"white","t":"q","s":"♕"}')
+                                $>var _ = $>set($Plateau, $idx, $nq)
+                            }
+                            $>if($pfy == 7) {
+                                $>var nq = $>json_parse('{"c":"black","t":"q","s":"♛"}')
+                                $>var _ = $>set($Plateau, $idx, $nq)
+                            }
+                        }
+                        
+                        $>var oppTour = "black"
+                        $>if($this.tour == "black") {
+                            $>var oppTour = "white"
+                        }
+                        
+                        $>VerifierFinDePartie($oppTour)
+                        
+                        $>if($GLOBAL_FIN_PARTIE == "mat") {
+                            $>var this.tour = "fin"
+                            $>var this.msg = "ÉCHEC ET MAT ! Victoire !"
+                            $>var this.msgColor = "#e74c3c"
+                        } $>else {
+                            $>if($GLOBAL_FIN_PARTIE == "pat") {
+                                $>var this.tour = "fin"
+                                $>var this.msg = "PAT ! Égalité totale."
+                                $>var this.msgColor = "#95a5a6"
+                            } $>else {
+                                $>var this.tour = $oppTour
+                                $>var this.msg = "Trait adverse."
+                                $>var this.msgColor = "#2ecc71"
+                                
+                                // Échec simple ?
+                                $>var oppRoiIdx = -1
+                                $>var oSearch = 0
+                                $>while($oSearch < 64) {
+                                    $>if($oppRoiIdx == -1) {
+                                        $>var oP = $>get($Plateau, $oSearch)
+                                        $>if($oP != null) {
+                                            $>var oPt = $>get($oP, "t")
+                                            $>if($oPt == "k") {
+                                                $>var oPc = $>get($oP, "c")
+                                                $>if($oPc == $oppTour) {
+                                                    $>var oppRoiIdx = $oSearch
+                                                }
+                                            }
+                                        }
+                                    }
+                                    $>var oSearch = $>math($oSearch + 1)
+                                }
+                                
+                                $>var attaquantCol = "black"
+                                $>if($oppTour == "black") {
+                                    $>var attaquantCol = "white"
+                                }
+                                
+                                $>VerifierEchec($oppRoiIdx, $attaquantCol)
+                                
+                                $>if($GLOBAL_ROI_DANGER == "oui") {
+                                    $>var this.msg = "ÉCHEC au Roi !"
+                                    $>var this.msgColor = "#e67e22"
+                                }
+                            }
+                        }
+                        $>var this.selection = -1
+                        $>var this.moves = ","
+                    } $>else {
+                        $>var this.selection = -1
+                        $>var this.moves = ","
+                        $>var this.msg = "Mouvement interdit !"
+                        $>var this.msgColor = "#e74c3c"
+                    }
+                }
+            }
+        }
+        $>dom_update("#jeu_root", $>Interface())
+    }
+}
+
+$>new JeuEchecs = Partie()
+$>def OnClickBridge(index) {
+    $>JeuEchecs.clic($index)
+}
+
+// ---------------------------------------------------------
+// 🖥️ 4. VUE HTML (Avec Hints !)
+// ---------------------------------------------------------
+$>def Interface() {
+    $>div("class='status-bar'", {
+        $>span("style='display:inline-block; width:15px; height:15px; border-radius:50%; background:$JeuEchecs.msgColor; box-shadow: 0 0 5px $JeuEchecs.msgColor;'", {})
+        $>span("style='color:$JeuEchecs.msgColor;'", { $JeuEchecs.msg })
+    })
+    
+    $>div("class='board-container'", {
+        $>div("class='board'", {
+            $>repeat(64) {
+                $>var i = $>math($index - 1)
+                $>var y = $>math(FLOOR($i / 8))
+                $>var x = $>math($i - ($y * 8))
+                
+                $>var isDark = $>math(($x + $y) % 2)
+                $>var bgClass = "light"
+                $>if($isDark == 1) {
+                    $>var bgClass = "dark"
+                }
+                $>if($i == $JeuEchecs.selection) {
+                    $>var bgClass = "selected"
+                }
+                
+                // --- INDICATEURS DE MOUVEMENTS (HINTS) ---
+                $>var stClasses = ""
+                $>if($JeuEchecs.moves != ",") {
+                    $>var checkStr = ",$i,"
+                    $>var isPossBool = $>contains($JeuEchecs.moves, $checkStr)
+                    $>if($isPossBool == true) {
+                        $>var targetInfo = $>get($Plateau, $i)
+                        $>if($targetInfo != null) {
+                            $>var stClasses = "capture"
+                        } $>else {
+                            $>var stClasses = "hint"
+                        }
+                    }
+                }
+                
+                $>var info = $>get($Plateau, $i)
+                $>var pieceHTML = ""
+                $>if($info != null) {
+                    $>var pSym = $>get($info, "s")
+                    $>var pCol = $>get($info, "c")
+                    $>var pieceHTML = "<span class='piece $pCol'>$pSym</span>"
+                }
+                
+                $>div("class='square $bgClass $stClasses' onclick=\"$>OnClickBridge('$i')\"", {
+                    $pieceHTML
+                })
+            }
+        })
+    })
+}
+
+// ---------------------------------------------------------
+// 5. POINT D'ENTRÉE
+// ---------------------------------------------------------
+$>div("id='teny_board'", {
+    $>div("class='chess-container' id='jeu_root'", {
+        $>Interface()
+    })
+})

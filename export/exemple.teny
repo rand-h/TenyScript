@@ -9,9 +9,9 @@ $>var qte = 5
 $>var total = $>math($prix * $qte)
 
 $>print("Article : Disque SSD")
-$>print("Prix unitaire : " + $prix + " Ar")
-$>print("Quantité : " + $qte)
-$>print("TOTAL : " + $total + " Ar", "#4caf50")
+$>print("Prix unitaire : $prix  Ar")
+$>print("Quantité : $qte")
+$>print("TOTAL : $total Ar", "#4caf50")
 
 $>wait(500)
 
@@ -22,12 +22,12 @@ $>var elements = []
 $>repeat(5) {
     $>var val = $>random(10, 100)
     $>push($elements, $val)
-    $>print("• Génération valeur " + $index + " : " + $val, "#888")
+    $>print("• Génération valeur $index  : $val", "#888")
 }
 
 // --- 3. Graphique (Chart.js via Core) ---
 $>print("<br>3. Visualisation de Données", "#9cdcfe")
-$>chart_line(["T1", "T2", "T3", "T4", "T5"], $elements, "Statistiques CPU")
+$>chart_line("données",["T1", "T2", "T3", "T4", "T5"], $elements, "Statistiques CPU")
 
 // --- 4. Interactivité UI ---
 $>print("<br>4. Interface Utilisateur", "#9cdcfe")
@@ -36,14 +36,3 @@ Entrez votre nom :
 $>input("nom_user", "Votre pseudo...")
 $>br()
 
-$>def action_saluer() {
-    $>var n = $>dom_val("nom_user")
-    $>if($n) {
-        $>alert("Bonjour " + $n + " !")
-        $>print("Salutation envoyée à " + $n, "lime")
-    } $>else {
-        $>alert("Veuillez entrer un nom !")
-    }
-}
-
-$>button("Saluer", "$>action_saluer()", "#ff9800")
