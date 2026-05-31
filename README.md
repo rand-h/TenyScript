@@ -22,7 +22,7 @@
 
 ## Présentation
 
-**TenyScript** est un langage interprété léger, conçu pour fusionner harmonieusement du contenu textuel (HTML/Markdown) avec de la logique de programmation. Il a été initialement créé pour propulser l'écosystème **Mofonaina** (application chrétienne malgache), facilitant la génération dynamique de liturgies (*Fandaharana*), de cantiques et de contenus interactifs.
+**TenyScript** est un langage interprété léger, asynchrone et orienté composant. Conçu pour fusionner harmonieusement du contenu textuel (HTML/Markdown) avec de la logique de programmation, il a été initialement créé pour propulser l'écosystème **Mofonaina** (application chrétienne malgache), facilitant la génération dynamique de liturgies (*Fandaharana*), de cantiques et de contenus interactifs.
 
 Le projet inclut **TenyStudio**, un IDE complet fonctionnant entièrement dans le navigateur, permettant de coder, tester et visualiser du TenyScript en temps réel.
 
@@ -33,7 +33,8 @@ Le projet inclut **TenyStudio**, un IDE complet fonctionnant entièrement dans l
 ### Le Moteur TenyScript
 * **Syntaxe Hybride :** Écrivez du texte librement et injectez de la logique avec le préfixe `$>`.
 * **Zero Compilation :** Interprété à la volée en JavaScript côté client.
-* **Bibliothèque Standard :** Manipulation de matrices, dates, requêtes HTTP, et utilitaires mathématiques.
+* **Architecture Asynchrone :** Boucles et délais non-bloquants (Zéro Lag).
+* **DOM Natif :** Génération et manipulation sécurisée de balises HTML (Virtual DOM).
 * **Module Liturgique :** Fonctions dédiées (`$>perikopa`, `$>hira`, `$>verset`) pour les besoins de l'Église.
 * **Sécurité :** Exécution sandboxée (dans les limites du navigateur).
 
@@ -48,7 +49,7 @@ Le projet inclut **TenyStudio**, un IDE complet fonctionnant entièrement dans l
 
 ## Installation & Démarrage
 
-Essayer : [https://tenyscript.web.app](https://tenyscript.web.app/TenyStudio.html)
+Essayer l'IDE en ligne : [https://tenyscript.web.app](https://tenyscript.web.app/TenyStudio.html)
 
 ---
 
@@ -57,10 +58,10 @@ Essayer : [https://tenyscript.web.app](https://tenyscript.web.app/TenyStudio.htm
 TenyScript utilise `$>pour_les_commandes`. Tout le reste est traité comme du texte/HTML.
 
 ### Variables & Affichage
-```javascript
+```teny
 // Déclaration
 $>var nom = "TenyScript"
-$>var version = 2.0
+$>var version = 1.1
 
 // Affichage
 Bienvenue sur $>span("style='color: gold'", { $nom }) v.$version !
