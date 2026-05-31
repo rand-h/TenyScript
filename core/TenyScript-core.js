@@ -3,7 +3,7 @@
 // =========================================================
 (function() {
     const scriptActuel = document.currentScript;
-    let dossierBase = "core/";
+    let dossierBase = "/";
     if (scriptActuel && scriptActuel.src) dossierBase = scriptActuel.src.substring(0, scriptActuel.src.lastIndexOf('/') + 1);
 
     const dependances = ["TenyScript-style.js", "TenyScript-console.js"];
