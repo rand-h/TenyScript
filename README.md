@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
   </a>
   <a href="https://semver.org">
-    <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version">
   </a>
   <a href="#">
     <img src="https://img.shields.io/badge/platform-Web-orange.svg" alt="Platform">
@@ -63,4 +63,4 @@ $>var nom = "TenyScript"
 $>var version = 2.0
 
 // Affichage
-Bienvenue sur $>print($nom, "gold") v.$version !
+Bienvenue sur $>span("style='color: gold'", { $nom }) v.$version !
