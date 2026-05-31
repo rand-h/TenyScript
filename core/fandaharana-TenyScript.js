@@ -350,25 +350,28 @@ if (typeof window.executerMiniLangage === 'function' && !window._fandaInjected) 
 // 5. CHARGEMENT AUTO DES APIs MOFONAINA
 // ============================================================
 const import_API = () => {
+    // On force l'URL de base vers votre serveur privé
+    const baseUrl = "https://tenyscript.web.app/assets/js/API/";
+
     const dependencies = {
-        "PerikopaAPI": "https://mofonaina-cabea.web.app/assets/js/API/perikopaAPI.js",
-        "DateAPI": "https://mofonaina-cabea.web.app/assets/js/API/dateAPI.js",
-        "BibleAPI": "https://mofonaina-cabea.web.app/assets/js/API/api_v5c.js",
-        "BibleReference": "https://mofonaina-cabea.web.app/assets/js/API/bibleReference.js",
-        "BibleReferencePlus": "https://mofonaina-cabea.web.app/assets/js/API/bibleReferencePlus.js",
-        "MofonainaAPI": "https://mofonaina-cabea.web.app/assets/js/API/mofonainaAPI.js",
-        "FihiranaAPI": "https://mofonaina-cabea.web.app/assets/js/API/fihiranaAPI_v4.js",
-        "LohahevitraAPI": "https://mofonaina-cabea.web.app/assets/js/API/lohahevitraAPI.js",
-        "FanekempinoanaAPI": "https://mofonaina-cabea.web.app/assets/js/API/fanekempinoanaAPI.js"
+        "PerikopaAPI": "perikopaAPI.js",
+        "DateAPI": "dateAPI.js",
+        "BibleAPI": "api_v5c.js",
+        "BibleReference": "bibleReference.js",
+        "BibleReferencePlus": "bibleReferencePlus.js",
+        "MofonainaAPI": "mofonainaAPI.js",
+        "FihiranaAPI": "fihiranaAPI_v4.js",
+        "LohahevitraAPI": "lohahevitraAPI.js",
+        "FanekempinoanaAPI": "fanekempinoanaAPI.js"
     };
 
-    Object.entries(dependencies).forEach(([className, url]) => {
+    Object.entries(dependencies).forEach(([className, filename]) => {
         if (typeof window[className] === 'undefined') {
             console.log(`📥 Chargement auto : ${className}`);
             const script = document.createElement('script');
-            script.src = url;
+            script.src = baseUrl + filename; // Construit l'URL absolue
             script.async = false;
-            script.onerror = () => console.error(`❌ Impossible de charger ${url}`);
+            script.onerror = () => console.error(`❌ Impossible de charger ${filename}`);
             document.head.appendChild(script);
         }
     });
